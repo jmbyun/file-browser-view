@@ -2,7 +2,20 @@
   "name": "file-browser-view",
   "version": "1.0.0",
   "description": "A File Browser Frontend implemented in JavaScript for the browser.",
-  "main": "dist/file-browser-view.esm.js",
+  "main": "dist/file-browser-view.cjs.js",
+  "module": "dist/file-browser-view.esm.js",
+  "browser": "dist/file-browser-view.umd.js",
   "author": "Jeongmin Byun",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "start": "./node_modules/.bin/rollup -c -w",
+    "build": "./node_modules/.bin/rollup -c"
+  },
+  "devDependencies": {
+    "rollup": "^0.67.4",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-livereload": "^0.6.0",
+    "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-serve": "^0.6.0"
+  }
 }
