@@ -1,5 +1,7 @@
+import babel from 'rollup-plugin-babel';
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
+import postcss from 'rollup-plugin-postcss';
 import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import pkg from './package.json';
@@ -14,11 +16,17 @@ export default [
       format: 'umd'
     },
     plugins: [
+      postcss({
+        extensions: ['.css'],
+      }),
       resolve(), // so Rollup can find `ms`
       commonjs(), // so Rollup can convert `ms` to an ES module
+      babel({
+        exclude: 'node_modules/**',
+      }),
       serve(),
       livereload(),
-    ]
+    ],
   },
 
   // CommonJS (for Node) and ES module (for bundlers) build.
@@ -32,7 +40,15 @@ export default [
     external: ['ms'],
     output: [
       { file: pkg.main, format: 'cjs' },
-      { file: pkg.module, format: 'es' }
+      { file: pkg.module, format: 'es' },
+    ],
+    plugins: [
+      postcss({
+        extensions: ['.css'],
+      }),
+      babel({
+        exclude: 'node_modules/**',
+      }),
     ]
   }
 ];

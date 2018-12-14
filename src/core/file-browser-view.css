@@ -1,0 +1,22 @@
+.fbv-container {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.fbv-header {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.fbv-body-container {
+  flex: 1 1 auto;
+  position: relative;
+}
+
+.fbv-body {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}

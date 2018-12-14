@@ -6,19 +6,48 @@
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title></title>
-
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="icon" href="images/favicon.png">
-
+  <title>FileBrowserView</title>
+  
+  <style>
+    .center-box-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      padding: 0;
+      margin: 0;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+    .center-box {
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      position: relative;
+      max-height: 500px;
+      height: 100%;
+      max-width: 350px;
+      width: 100%;
+    }
+    .main {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
   <script src="dist/file-browser-view.umd.js"></script>
 </head>
 
 <body>
-  <div id="result"></div>
+  <div class="center-box-container">
+    <div class="center-box">
+      <div class="main" id="main"></div>
+    </div>
+  </div>
   <script>
-    var fbv = FileBrowserView;
-    document.getElementById('result').innerHTML = fbv(1, 2);
+    var main = document.getElementById('main');
+    var view = new FileBrowserView(main, {});
   </script>
 </body>
 

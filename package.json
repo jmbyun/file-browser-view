@@ -12,10 +12,13 @@
     "build": "./node_modules/.bin/rollup -c"
   },
   "devDependencies": {
+    "@babel/core": "^7.2.0",
     "rollup": "^0.67.4",
+    "rollup-plugin-babel": "^4.1.0",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-livereload": "^0.6.0",
     "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-postcss": "^1.6.3",
     "rollup-plugin-serve": "^0.6.0"
   }
 }

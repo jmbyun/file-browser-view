@@ -1,4 +1,3 @@
+import FileBrowserView from './core/file-browser-view';
 
-export default function add(a, b) {
-    return a + b;
-}
+export default FileBrowserView;
