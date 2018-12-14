@@ -1,0 +1,8 @@
+{
+  "name": "file-browser-view",
+  "version": "1.0.0",
+  "description": "A File Browser Frontend implemented in JavaScript for the browser.",
+  "main": "dist/file-browser-view.esm.js",
+  "author": "Jeongmin Byun",
+  "license": "MIT"
+}
