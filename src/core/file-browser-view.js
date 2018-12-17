@@ -1,8 +1,10 @@
-import Files from './files';
+import FileTreeView from './file-tree-view';
 import { createElement } from './render';
 import './file-browser-view.css';
 
-const DEFAULT_OPTIONS = {};
+const DEFAULT_OPTIONS = {
+  indentSize: 16, 
+};
 export default class FileBrowserView {
   constructor(target, options = {}) {
     this.target = target;
@@ -29,10 +31,7 @@ export default class FileBrowserView {
 
   drawElements() {
     this.createLayout();
-    this.files = new Files(this.elements.body, {
-      ...this.options,
-      depth: 0,
-    });
+    this.fileTreeView = new FileTreeView(this.elements.body, this.options);
     this.target.appendChild(this.elements.container);
   }
 }

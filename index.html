@@ -46,8 +46,13 @@
     </div>
   </div>
   <script>
+    var value = `
+this1/
+this1/is2
+this1/is3/the3
+    `;
     var main = document.getElementById('main');
-    var view = new FileBrowserView(main, {});
+    var view = new FileBrowserView(main, { value });
   </script>
 </body>
 
