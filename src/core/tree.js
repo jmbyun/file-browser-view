@@ -20,7 +20,7 @@ class FileItem {
   }
 }
 
-class FileTree {
+export class FileTree {
   constructor(value) {
     this.items = {};
     this.rootItems = [];
