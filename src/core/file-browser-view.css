@@ -1,3 +1,7 @@
+[class*='fbv-'] {
+  box-sizing: border-box;
+}
+
 .fbv-container {
   display: flex;
   position: relative;

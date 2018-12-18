@@ -1,9 +1,9 @@
 
 const DEFAULT_OPTIONS = {
-
+  expand: false,
 };
 
-class FileItem {
+export class FileItem {
   constructor(path, title, options) {
     this.path = path;
     this.title = title;
@@ -15,8 +15,34 @@ class FileItem {
     };
   }
 
+  isExpand() {
+    return Boolean(this.options.expand);
+  }
+
   addChildren(...children) {
     this.children.push(...children);
+  }
+
+  expand() {
+    if (this.dir) {
+      this.options.expand = true;
+    }
+  }
+
+  collapse() {
+    if (this.dir) {
+      this.options.expand = false;
+    }
+  }
+
+  toString() {
+    const params = Object.keys(this.options)
+      .filter(key => !['expand', 'dir'].includes(key))
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(this.options[key])}`)
+      .join('&');
+    const expand = this.options.expand ? '*' : '';
+    const separator = params ? '?' : '';
+    return `${this.path}${expand}${separator}${params}`;
   }
 }
 
@@ -101,5 +127,12 @@ export class FileTree {
     for (const line of lines) {
       this.parseValueLine(line);
     }
+  }
+
+  toValue() {
+    const paths = Object.keys(this.items);
+    paths.sort();
+    return paths.map(path => this.items[path].toString)
+      .join('\n');
   }
 }

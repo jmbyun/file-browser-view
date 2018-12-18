@@ -27,13 +27,27 @@
       position: relative;
       max-height: 500px;
       height: 100%;
-      max-width: 350px;
+      max-width: 700px;
       width: 100%;
     }
     .main {
+      box-sizing: border-box;
+      border: 1px solid #444;
+      border-left: 0;
       position: absolute;
-      width: 100%;
+      width: 50%;
       height: 100%;
+      top: 0;
+      right: 0;
+    }
+    .detail {
+      box-sizing: border-box;
+      border: 1px solid #444;
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      top: 0;
+      left: 0;
     }
   </style>
   <script src="dist/file-browser-view.umd.js"></script>
@@ -43,16 +57,18 @@
   <div class="center-box-container">
     <div class="center-box">
       <div class="main" id="main"></div>
+      <div class="detail" id="detail"></div>
     </div>
   </div>
   <script>
-    var value = `
-this1/
-this1/is2
-this1/is3/the3
-    `;
-    var main = document.getElementById('main');
-    var view = new FileBrowserView(main, { value });
+    var view = null;
+    async function loadFileBrowser() {
+      const res = await fetch('/files.txt');
+      const value = await res.text();
+      const main = document.getElementById('main');
+      view = new FileBrowserView(main, { value });
+    };
+    loadFileBrowser();
   </script>
 </body>
 

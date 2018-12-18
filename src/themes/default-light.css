@@ -1,0 +1,20 @@
+.fbv-container.t-default-light .fbv-text {
+  color: #222;
+}
+
+.fbv-container.t-default-light .fbv-tree-row-container:hover {
+  background-color: #ddd;
+}
+
+.fbv-container.t-default-light .fbv-tree-row-container--active {
+  background-color: #ccc;
+}
+
+.fbv-container.t-default-light .fbv-tree-arrow-down {
+  border-top-color: #222;
+}
+
+.fbv-container.t-default-light .fbv-tree-arrow-right {
+  border-left-color: #222;
+}
+
