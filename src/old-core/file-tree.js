@@ -1,52 +1,6 @@
+import FileItem from './file-item';
 
-const DEFAULT_OPTIONS = {
-  expand: false,
-};
-
-export class FileItem {
-  constructor(path, title, options) {
-    this.path = path;
-    this.title = title;
-    this.children = [];
-    this.dir = Boolean((options || {}).dir);
-    this.options = {
-      ...DEFAULT_OPTIONS,
-      ...(options || {}),
-    };
-  }
-
-  isExpand() {
-    return Boolean(this.options.expand);
-  }
-
-  addChildren(...children) {
-    this.children.push(...children);
-  }
-
-  expand() {
-    if (this.dir) {
-      this.options.expand = true;
-    }
-  }
-
-  collapse() {
-    if (this.dir) {
-      this.options.expand = false;
-    }
-  }
-
-  toString() {
-    const params = Object.keys(this.options)
-      .filter(key => !['expand', 'dir'].includes(key))
-      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(this.options[key])}`)
-      .join('&');
-    const expand = this.options.expand ? '*' : '';
-    const separator = params ? '?' : '';
-    return `${this.path}${expand}${separator}${params}`;
-  }
-}
-
-export class FileTree {
+export default class FileTree {
   constructor(value) {
     this.items = {};
     this.rootItems = [];
@@ -58,7 +12,7 @@ export class FileTree {
     this.items[item.path] = item;
 
     const pathTokens = item.path.split('/');
-    
+
     if (pathTokens.length === (item.dir ? 2 : 1)) {
       // Register to root items array.
       this.rootItems.push(item);
@@ -88,7 +42,7 @@ export class FileTree {
   parseValueLine(line) {
     const lineTokens = line.split('?');
     const filePath = lineTokens[0].replace('*', '').trim();
-    const options = { 
+    const options = {
       expand: lineTokens[0].endsWith('*'),
       dir: filePath.endsWith('/'),
     };
@@ -113,8 +67,8 @@ export class FileTree {
     }
     this.addItem(
       new FileItem(
-        filePath, 
-        pathTokens[pathTokens.length - (options.dir ? 2 : 1)], 
+        filePath,
+        pathTokens[pathTokens.length - (options.dir ? 2 : 1)],
         options,
       )
     );

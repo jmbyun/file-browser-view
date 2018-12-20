@@ -1,71 +1,71 @@
 import FileTreeView from './file-tree-view';
 import ToolbarView from './toolbar-view';
-import { createElement } from './render';
+import { createDiv } from './drawer';
 import './file-browser-view.css';
 import '../themes/default-light.css';
 
 const DEFAULT_OPTIONS = {
-  indentSize: 16, 
   theme: 'default-light',
+  createFile: true,
+  createDir: true,
+  rename: true,
+  remove: true,
 };
-export default class FileBrowserView extends EventTarget {
+
+export default class FileBrowserView {
   constructor(target, options = {}) {
-    super();
+    this.eventTarget = new EventTarget();
     this.target = target;
     this.options = {
       ...DEFAULT_OPTIONS,
       ...options,
     };
+    this.selectedItem = null;
+    this.editMode = null;
+    this.editTarget = null;
+    this.items = {};
+
     this.elements = {};
-    this.drawElements();
+    this.draw();
   }
 
-  on(typeArg, listener) {
-    this.addEventListener(typeArg, listener);
+  on(type, listener) {
+    this.eventTarget.addEventListener(type, listener);
   }
 
-  off(typeArg, listener) {
-    this.removeEventListener(typeArg, listener);
+  handleSelect(item) {
+
   }
 
-  getValue() {
-    return this.fileTreeView.getValue();
+  handleEdit(editMode, editTarget) {
+
   }
 
-  setOption(key, value) {
-    this.options[key] = value;
-    switch (key) {
-      case 'value':
-        this.fileTreeView.setValue(value);
-        break;
-    
-      default:
-        break;
-    }
-  }
+  // Draw DOM elements in the target element.
+  draw() {
+    // Create elements.
+    const els = this.elements;
+    els.container = createDiv(`fbv-container t-${this.options.theme}`);
+    els.header = createDiv('fbv-header');
+    els.container.appendChild(els.header);
+    els.bodyContainer = createDiv('fbv-body-container');
+    els.container.appendChild(els.bodyContainer);
+    els.body = createDiv('fbv-body');
+    els.bodyContainer.appendChild(els.body);
 
-  dispatch(typeArg, eventInit) {
-    const event = new Event(typeArg, eventInit);
-    return this.dispatchEvent(event);
-  }
+    // Bind children.
+    this.fileTreeView = new FileTreeView(els.body, {
+      eventTarget: this.eventTarget,
+      items: this.items,
+      options: this.options,
+      handleSelect: item => this.handleSelect(item),
+      handleEdit: (editMode, editTarget) => this.handleEdit(editMode, editTarget),
+    });
+    this.toolbarView = new ToolbarView(els.header, {
 
-  createLayout() {
-    const container = createElement('div', `fbv-container t-${this.options.theme}`);
-    const header = createElement('div', 'fbv-header');
-    const bodyContainer = createElement('div', 'fbv-body-container');
-    const body = createElement('div', 'fbv-body');
-    container.appendChild(header);
-    container.appendChild(bodyContainer);
-    bodyContainer.appendChild(body);
-    this.elements.header = header;
-    this.elements.body = body;
-    this.elements.container = container;
-  }
+    });
 
-  drawElements() {
-    this.createLayout();
-    this.fileTreeView = new FileTreeView(this, this.elements.body, this.options);
-    this.toolbarView = new ToolbarView(this, this.elements.header, this.options);
-    this.target.appendChild(this.elements.container);
+    // Render.
+    this.target.appendChild(els.container);
   }
 }

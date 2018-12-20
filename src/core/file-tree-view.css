@@ -5,55 +5,6 @@
   overflow-y: auto;
 }
 
-.fbv-tree-item-container {
-
-}
-
-.fbv-tree-row-container {
-  padding: 0 0.5rem;
-}
-
-.fbv-tree-item-row {
-  display: flex;
-  flex-flow: row nowrap;
-  padding-top: 0.1rem;
-  padding-bottom: 0.1rem;
-}
-
-.fbv-tree-item-icon {
-  flex: 0 0 auto;
-  min-width: 1.125rem;
-  padding-right: 0.5rem;
-}
-
-.fbv-tree-arrow-down {
-  margin-top: 0.45rem;
-  width: 0; 
-  height: 0; 
-  border-left: 0.3rem solid transparent;
-  border-right: 0.3rem solid transparent;
-  
-  border-top: 0.3rem solid #000;
-}
-
-.fbv-tree-arrow-right {
-  margin-top: 0.25rem;
-  width: 0; 
-  height: 0; 
-  border-top: 0.3rem solid transparent;
-  border-bottom: 0.3rem solid transparent;
-  
-  border-left: 0.3rem solid #000;
-}
-
-.fbv-tree-item-title {
-  flex: 1 1 auto;
-}
-
-.fbv-tree-item-info {
-  flex: 0 0 auto;
-}
-
-.fbv-tree-item-children {
-
+.fbv-tree-item {
+  display: block;
 }

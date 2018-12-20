@@ -22,19 +22,19 @@
   color: #ccc;
 }
 
-.fbv-container.t-default-light .fbv-tree-row-container:hover {
+.fbv-container.t-default-light .fbv-item-container:hover {
   background-color: #ddd;
 }
 
-.fbv-container.t-default-light .fbv-tree-row-container--active {
+.fbv-container.t-default-light .fbv-item-container--active {
   background-color: #ccc;
 }
 
-.fbv-container.t-default-light .fbv-tree-arrow-down {
-  border-top-color: #222;
+.fbv-container.t-default-light .fbv-item-icon {
+  color: #222;
 }
 
-.fbv-container.t-default-light .fbv-tree-arrow-right {
-  border-left-color: #222;
+.fbv-container.t-default-light .fbv-tree-input {
+  border-color: #999;
+  background-color: #eee;
 }
-

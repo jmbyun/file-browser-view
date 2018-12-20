@@ -14,131 +14,14 @@
     });
     return element;
   }
-
-  const DEFAULT_OPTIONS = {
-    expand: false
-  };
-  class FileItem {
-    constructor(path, title, options) {
-      this.path = path;
-      this.title = title;
-      this.children = [];
-      this.dir = Boolean((options || {}).dir);
-      this.options = { ...DEFAULT_OPTIONS,
-        ...(options || {})
-      };
-    }
-
-    isExpand() {
-      return Boolean(this.options.expand);
-    }
-
-    addChildren(...children) {
-      this.children.push(...children);
-    }
-
-    expand() {
-      if (this.dir) {
-        this.options.expand = true;
-      }
-    }
-
-    collapse() {
-      if (this.dir) {
-        this.options.expand = false;
-      }
-    }
-
-    toString() {
-      const params = Object.keys(this.options).filter(key => !['expand', 'dir'].includes(key)).map(key => `${encodeURIComponent(key)}=${encodeURIComponent(this.options[key])}`).join('&');
-      const expand = this.options.expand ? '*' : '';
-      const separator = params ? '?' : '';
-      return `${this.path}${expand}${separator}${params}`;
-    }
-
+  function createDiv(className, style) {
+    return createElement('div', className, style);
   }
-  class FileTree {
-    constructor(value) {
-      this.items = {};
-      this.rootItems = [];
-      this.parseValue(value);
-    }
-
-    addItem(item) {
-      // Register to all items map.
-      this.items[item.path] = item;
-      const pathTokens = item.path.split('/');
-
-      if (pathTokens.length === (item.dir ? 2 : 1)) {
-        // Register to root items array.
-        this.rootItems.push(item);
-      } else {
-        // Register to parent's children array.
-        const parentPath = pathTokens.slice(0, pathTokens.length - (item.dir ? 2 : 1)).join('/') + '/';
-        this.items[parentPath].addChildren(item);
-      }
-    }
-
-    parseOptions(options) {
-      const params = {};
-      const pairs = options.split('&');
-
-      for (const pair of pairs) {
-        if (pair.includes('=')) {
-          const pairTokens = pair.trim().split('=');
-          params[decodeURIComponent(pairTokens[0])] = decodeURIComponent(pairTokens[1]);
-        } else {
-          params[decodeURIComponent(pair.trim())] = true;
-        }
-      }
-
-      return params;
-    }
-
-    parseValueLine(line) {
-      const lineTokens = line.split('?');
-      const filePath = lineTokens[0].replace('*', '').trim();
-      const options = {
-        expand: lineTokens[0].endsWith('*'),
-        dir: filePath.endsWith('/')
-      };
-
-      if (lineTokens.length > 1) {
-        Object.assign(options, this.parseOptions(lineTokens[1]));
-      } // Add ancestor directories.
-
-
-      const pathTokens = filePath.split('/');
-
-      for (let depth = 1; depth < pathTokens.length; depth++) {
-        const ancestorPath = pathTokens.slice(0, depth).join('/') + '/';
-
-        if (ancestorPath === filePath || this.items[ancestorPath]) {
-          continue;
-        }
-
-        this.addItem(new FileItem(ancestorPath, pathTokens[depth - 1], {
-          dir: true
-        }));
-      }
-
-      this.addItem(new FileItem(filePath, pathTokens[pathTokens.length - (options.dir ? 2 : 1)], options));
-    }
-
-    parseValue(value) {
-      const lines = value.split('\n').map(line => line.trim()).filter(line => line !== '');
-
-      for (const line of lines) {
-        this.parseValueLine(line);
-      }
-    }
-
-    toValue() {
-      const paths = Object.keys(this.items);
-      paths.sort();
-      return paths.map(path => this.items[path].toString()).join('\n');
-    }
-
+  function createIcon(className, style) {
+    return createElement('i', className, style);
+  }
+  function createAnchor(className, style) {
+    return createElement('a', className, style);
   }
 
   function styleInject(css, ref) {
@@ -168,168 +51,173 @@
     }
   }
 
-  var css = ".fbv-tree-container {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  overflow-y: auto;\n}\n\n.fbv-tree-item-container {\n\n}\n\n.fbv-tree-row-container {\n  padding: 0 0.5rem;\n}\n\n.fbv-tree-item-row {\n  display: flex;\n  flex-flow: row nowrap;\n  padding-top: 0.1rem;\n  padding-bottom: 0.1rem;\n}\n\n.fbv-tree-item-icon {\n  flex: 0 0 auto;\n  min-width: 1.125rem;\n  padding-right: 0.5rem;\n}\n\n.fbv-tree-arrow-down {\n  margin-top: 0.45rem;\n  width: 0; \n  height: 0; \n  border-left: 0.3rem solid transparent;\n  border-right: 0.3rem solid transparent;\n  \n  border-top: 0.3rem solid #000;\n}\n\n.fbv-tree-arrow-right {\n  margin-top: 0.25rem;\n  width: 0; \n  height: 0; \n  border-top: 0.3rem solid transparent;\n  border-bottom: 0.3rem solid transparent;\n  \n  border-left: 0.3rem solid #000;\n}\n\n.fbv-tree-item-title {\n  flex: 1 1 auto;\n}\n\n.fbv-tree-item-info {\n  flex: 0 0 auto;\n}\n\n.fbv-tree-item-children {\n\n}";
+  var css = ".fbv-item-container {\n  padding: 0 0.5rem;\n}\n\n.fbv-item-row {\n  display: flex;\n  align-items: center;\n  flex-flow: row nowrap;\n  padding-top: 0.1rem;\n  padding-bottom: 0.1rem;\n  cursor: pointer;\n}\n\n.fbv-item-icon {\n  flex: 0 0 auto;\n  min-width: 1.25rem;\n  padding-right: 0.5rem;\n  font-size: 0.8rem;\n}\n\n.fbv-item-title {\n  flex: 1 1 auto;\n}\n\n.fbv-item-children {\n\n}";
   styleInject(css);
 
-  class FileTreeView {
-    constructor(browserView, target, options) {
-      this.browserView = browserView;
+  class FileItemView {
+    constructor(target, line) {
+      const lineTokens = line.split('?');
       this.target = target;
+      this.line = line;
+      this.path = lineTokens[0].replace('*', '').trim();
+      this.options = {
+        expand: lineTokens[0].endsWith('*'),
+        dir: this.path.endsWith('/'),
+        ...(lineTokens.length > 1 ? this.parseOptions(lineTokens[1]) : {})
+      };
+      this.pathTokens = this.path.split('/').filter(p => p !== '');
+      this.title = this.pathTokens[this.pathTokens.length - 1];
+      this.children = [];
       this.elements = {};
-      this.options = options;
-      this.selectedPath = null;
-      this.fileTree = new FileTree(options.value);
-      this.drawElements();
+      this.draw();
     }
 
-    getValue() {
-      return this.fileTree.toValue();
-    }
+    parseOptions(query) {
+      const options = {};
+      const pairs = query.split('&');
 
-    setValue(value) {
-      this.fileTree = new FileTree(value);
-      this.drawElements();
-    }
-
-    dispatch(typeArg, eventInit) {
-      return this.browserView.dispatch(typeArg, eventInit);
-    }
-
-    showAddFileInput() {}
-
-    showAddDirInput() {}
-
-    showRenameInput() {}
-
-    showRemoveConfirm() {}
-
-    collapseItem(item) {
-      item.collapse();
-      const element = this.elements.items[item.path];
-      element.arrow.classList.remove('fbv-tree-arrow-down');
-      element.arrow.classList.add('fbv-tree-arrow-right');
-      element.children.style.display = 'none';
-    }
-
-    expandItem(item) {
-      item.expand();
-      const element = this.elements.items[item.path];
-      element.arrow.classList.remove('fbv-tree-arrow-right');
-      element.arrow.classList.add('fbv-tree-arrow-down');
-      element.children.style.display = 'block';
-    }
-
-    selectItem(item) {
-      if (this.selectedPath) {
-        this.elements.items[this.selectedPath].rowContainer.classList.remove('fbv-tree-row-container--active');
-      }
-
-      this.selectedPath = item.path;
-      this.elements.items[item.path].rowContainer.classList.add('fbv-tree-row-container--active');
-    }
-
-    handleRowClick(item) {
-      if (item.dir) {
-        if (item.isExpand()) {
-          this.collapseItem(item);
-          this.dispatch('collapse', {
-            path: item.path
-          });
+      for (const pair of pairs) {
+        if (pair.includes('=')) {
+          const pairTokens = pair.trim().split('=');
+          options[decodeURIComponent(pairTokens[0])] = decodeURIComponent(pairTokens[1]);
         } else {
-          this.expandItem(item);
-          this.dispatch('expand', {
-            path: item.path
-          });
+          options[decodeURIComponent(pair.trim())] = true;
         }
       }
 
-      this.dispatch('change', {
-        path: item.path,
-        options: item.options
-      });
-      this.selectItem(item);
-      this.dispatch('select', {
-        path: item.path
-      });
+      return options;
     }
 
-    createLayout() {
-      this.elements.container = createElement('div', 'fbv-tree-container');
-      this.elements.items = {};
-    }
+    getAncestorPaths() {
+      const paths = [];
 
-    createItem(item, target, depth) {
-      const paddingLeft = `${depth * this.options.indentSize * 0.0625}rem`;
-      const container = createElement('div', 'fbv-tree-item-container');
-      const rowContainer = createElement('div', 'fbv-tree-row-container');
-      const row = createElement('div', 'fbv-tree-item-row', {
-        paddingLeft
-      });
-      const children = createElement('div', 'fbv-tree-item-children');
-      const icon = createElement('div', 'fbv-tree-item-icon');
-      const arrow = createElement('div');
-      const title = createElement('div', 'fbv-tree-item-title fbv-text');
-      const info = createElement('div', 'fbv-tree-item-info'); // Set up the structure.
-
-      if (item.dir) {
-        icon.appendChild(arrow);
+      for (let depth = 1; depth < this.pathTokens.length; depth++) {
+        paths.push(this.pathTokens.slice(0, depth).join('/') + '/');
       }
 
-      row.appendChild(icon);
-      row.appendChild(title);
-      row.appendChild(info);
-      rowContainer.appendChild(row);
-      container.appendChild(rowContainer);
-      container.appendChild(children);
-      target.appendChild(container); // Set attributes & values.
+      return paths;
+    }
 
-      title.innerHTML = item.title;
-      row.style.cursor = 'pointer';
+    getParentPath() {
+      return this.pathTokens.slice(0, this.pathTokens.length - 1).join('/') + '/';
+    }
 
-      if (item.isExpand()) {
-        arrow.className = 'fbv-tree-arrow-down';
+    addChild(child) {
+      this.children.push(child);
+      this.elements.children.appendChild(child.target);
+    }
+
+    drawIcon() {
+      const els = this.elements;
+
+      if (this.options.dir) {
+        if (this.options.expand) {
+          els.icon = createIcon('fa fa-angle-down');
+        } else {
+          els.icon = createIcon('fa fa-angle-right');
+        }
       } else {
-        arrow.className = 'fbv-tree-arrow-right';
-        children.style.display = 'none';
-      } // Bind listeners.
+        els.icon = createIcon('fa fa-file');
+      }
+    } // Draw DOM elements in the target element.
 
 
-      row.addEventListener('click', () => this.handleRowClick(item));
+    draw() {
+      this.drawIcon();
+      const els = this.elements;
+      els.container = createDiv('fbv-item-container');
+      els.row = createDiv('fbv-item-row');
+      els.container.appendChild(els.row);
+      els.iconContainer = createDiv('fbv-item-icon');
+      els.row.appendChild(els.iconContainer);
+      els.iconContainer.appendChild(els.icon);
+      els.title = createDiv('fbv-item-title');
+      els.title.innerHTML = this.title;
+      els.row.appendChild(els.title);
+      els.children = createDiv('fbv-item-children');
+      els.container.appendChild(els.children);
+      const depth = this.pathTokens.length - 1;
+      els.row.style.paddingLeft = `${depth}rem`;
 
-      for (const child of item.children) {
-        this.createItem(child, children, depth + 1);
+      if (!this.options.expand) {
+        els.children.style.display = 'none';
       }
 
-      this.elements.items[item.path] = {
-        container,
-        rowContainer,
-        icon,
-        arrow,
-        title,
-        info,
-        children
-      };
-    }
-
-    drawElements() {
-      this.target.innerHTML = '';
-      this.createLayout();
-
-      for (const item of this.fileTree.rootItems) {
-        this.createItem(item, this.elements.container, 0);
-      }
-
-      this.target.appendChild(this.elements.container);
+      this.target.appendChild(els.container);
     }
 
   }
 
-  var css$1 = ".fbv-toolbar-container {\n  display: flex;\n  padding: 0 0.25rem;\n  flex-flow: row wrap;\n}\n\n.fbv-toolbar-item {\n  flex: 0 0 auto;\n  padding: 0.25rem 0.25rem;\n  font-size: 1rem;\n  cursor: pointer;\n}\n\n.fbv-toolbar-item:disabled {\n  cursor: not-allowed;\n}\n";
+  var css$1 = ".fbv-tree-container {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  overflow-y: auto;\n}\n\n.fbv-tree-item {\n  display: block;\n}";
   styleInject(css$1);
 
+  class FileTreeView {
+    constructor(target, props) {
+      this.target = target;
+      this.props = props;
+      this.paths = [];
+      this.rootItems = [];
+      this.elements = {};
+      this.draw();
+    }
+
+    getValueLines() {
+      return this.props.options.value.split('\n').map(line => line.trim()).filter(line => line !== '');
+    } // Draw DOM elements in the target element.
+
+
+    draw() {
+      const els = this.elements;
+      els.container = createDiv('fbv-tree-container');
+      els.items = {}; // Create all required FileItemView instances. 
+
+      for (const line of this.getValueLines()) {
+        const itemContainer = createDiv('fbv-tree-item');
+        const item = new FileItemView(itemContainer, line);
+        els.items[item.path] = itemContainer;
+        this.props.items[item.path] = item;
+
+        for (const ancestorPath of item.getAncestorPaths()) {
+          if (!this.props.items[ancestorPath]) {
+            const ancestorContainer = createDiv('fbv-tree-item');
+            const ancestor = new FileItemView(ancestorContainer, ancestorPath);
+            els.items[ancestor.path] = ancestorContainer;
+            this.props.items[ancestor.path] = ancestor;
+          }
+        }
+      } // Sort items.
+
+
+      this.paths = Object.keys(this.props.items);
+      this.paths.sort((a, b) => a > b ? 1 : -1); // Set hierarchy between items.
+
+      for (const path of this.paths) {
+        const item = this.props.items[path];
+        const parentPath = item.getParentPath();
+
+        if (parentPath === '/') {
+          this.rootItems.push(item);
+        } else {
+          this.props.items[parentPath].addChild(item);
+        }
+      } // Draw root items.
+
+
+      for (const item of this.rootItems) {
+        els.container.appendChild(item.target);
+      }
+
+      this.target.appendChild(els.container);
+    }
+
+  }
+
+  var css$2 = ".fbv-toolbar-container {\n  display: flex;\n  padding: 0 0.25rem;\n  flex-flow: row wrap;\n}\n\n.fbv-toolbar-item {\n  flex: 0 0 auto;\n  padding: 0.25rem 0.25rem;\n  font-size: 1rem;\n  cursor: pointer;\n}\n\n.fbv-toolbar-item:disabled {\n  cursor: not-allowed;\n}\n";
+  styleInject(css$2);
+
   class ToolbarView {
-    constructor(browserView, target, options) {
-      this.browserView = browserView;
+    constructor(target, options) {
+      // this.browserView = browserView;
       this.target = target;
       this.elements = {};
       this.options = options;
@@ -337,27 +225,27 @@
     }
 
     createLayout() {
-      const container = createElement('div', 'fbv-toolbar-container');
-      const newFile = createElement('div', 'fbv-toolbar-item fbv-text');
-      const newDir = createElement('div', 'fbv-toolbar-item fbv-text');
-      const rename = createElement('div', 'fbv-toolbar-item fbv-text');
-      const remove = createElement('div', 'fbv-toolbar-item fbv-text'); // Set up the structure.
+      const container = createDiv('fbv-toolbar-container');
+      const newFile = createAnchor('fbv-toolbar-item fbv-text');
+      const newDir = createAnchor('fbv-toolbar-item fbv-text');
+      const rename = createAnchor('fbv-toolbar-item fbv-text');
+      const remove = createAnchor('fbv-toolbar-item fbv-text'); // Set up the structure.
 
       container.appendChild(newFile);
       container.appendChild(newDir);
       container.appendChild(rename);
       container.appendChild(remove); // Set attrubutes & values.
 
-      newFile.appendChild(createElement('i', 'fa fa-file'));
-      newDir.appendChild(createElement('i', 'fa fa-folder'));
-      rename.appendChild(createElement('i', 'fa fa-pencil'));
-      remove.appendChild(createElement('i', 'fa fa-trash')); // Bind listeners.
+      newFile.appendChild(createIcon('fa fa-file'));
+      newDir.appendChild(createIcon('fa fa-folder'));
+      rename.appendChild(createIcon('fa fa-pencil'));
+      remove.appendChild(createIcon('fa fa-trash')); // Bind listeners.
+      // const fileTreeView = this.browserView.fileTreeView;
+      // newFile.addEventListener('click', () => fileTreeView.showAddFileInput());
+      // newDir.addEventListener('click', () => fileTreeView.showAddDirInput());
+      // rename.addEventListener('click', () => fileTreeView.showRenameInput());
+      // remove.addEventListener('click', () => fileTreeView.showRemoveConfirm());
 
-      const fileTreeView = this.browserView.fileTreeView;
-      newFile.addEventListener('click', () => fileTreeView.showAddFileInput());
-      newDir.addEventListener('click', () => fileTreeView.showAddDirInput());
-      rename.addEventListener('click', () => fileTreeView.showRenameInput());
-      remove.addEventListener('click', () => fileTreeView.showRemoveConfirm());
       this.elements.container = container;
       this.elements.buttons = {
         newFile,
@@ -375,75 +263,64 @@
 
   }
 
-  var css$2 = "[class*='fbv-'] {\n  box-sizing: border-box;\n}\n\n.fbv-container {\n  display: flex;\n  flex-flow: column nowrap;\n  position: relative;\n  width: 100%;\n  height: 100%;\n}\n\n.fbv-header {\n  flex: 0 0 auto;\n  position: relative;\n}\n\n.fbv-body-container {\n  flex: 1 1 auto;\n  position: relative;\n}\n\n.fbv-body {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n}\n";
-  styleInject(css$2);
-
-  var css$3 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-container {\n  background-color: #eee;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:hover {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-tree-row-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-tree-row-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-tree-arrow-down {\n  border-top-color: #222;\n}\n\n.fbv-container.t-default-light .fbv-tree-arrow-right {\n  border-left-color: #222;\n}\n\n";
+  var css$3 = "[class*='fbv-'] {\n  box-sizing: border-box;\n}\n\n.fbv-container {\n  display: flex;\n  flex-flow: column nowrap;\n  position: relative;\n  width: 100%;\n  height: 100%;\n  font-size: 0.875rem;\n  line-height: 1.125rem;\n}\n\n.fbv-header {\n  flex: 0 0 auto;\n  position: relative;\n}\n\n.fbv-body-container {\n  flex: 1 1 auto;\n  position: relative;\n}\n\n.fbv-body {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n}\n";
   styleInject(css$3);
 
-  const DEFAULT_OPTIONS$1 = {
-    indentSize: 16,
-    theme: 'default-light'
+  var css$4 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-container {\n  background-color: #eee;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:hover {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-item-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-icon {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-tree-input {\n  border-color: #999;\n  background-color: #eee;\n}";
+  styleInject(css$4);
+
+  const DEFAULT_OPTIONS = {
+    theme: 'default-light',
+    createFile: true,
+    createDir: true,
+    rename: true,
+    remove: true
   };
-  class FileBrowserView extends EventTarget {
+  class FileBrowserView {
     constructor(target, options = {}) {
-      super();
+      this.eventTarget = new EventTarget();
       this.target = target;
-      this.options = { ...DEFAULT_OPTIONS$1,
+      this.options = { ...DEFAULT_OPTIONS,
         ...options
       };
+      this.selectedItem = null;
+      this.editMode = null;
+      this.editTarget = null;
+      this.items = {};
       this.elements = {};
-      this.drawElements();
+      this.draw();
     }
 
-    on(typeArg, listener) {
-      this.addEventListener(typeArg, listener);
+    on(type, listener) {
+      this.eventTarget.addEventListener(type, listener);
     }
 
-    off(typeArg, listener) {
-      this.removeEventListener(typeArg, listener);
-    }
+    handleSelect(item) {}
 
-    getValue() {
-      return this.fileTreeView.getValue();
-    }
+    handleEdit(editMode, editTarget) {} // Draw DOM elements in the target element.
 
-    setOption(key, value) {
-      this.options[key] = value;
 
-      switch (key) {
-        case 'value':
-          this.fileTreeView.setValue(value);
-          break;
+    draw() {
+      // Create elements.
+      const els = this.elements;
+      els.container = createDiv(`fbv-container t-${this.options.theme}`);
+      els.header = createDiv('fbv-header');
+      els.container.appendChild(els.header);
+      els.bodyContainer = createDiv('fbv-body-container');
+      els.container.appendChild(els.bodyContainer);
+      els.body = createDiv('fbv-body');
+      els.bodyContainer.appendChild(els.body); // Bind children.
 
-        default:
-          break;
-      }
-    }
+      this.fileTreeView = new FileTreeView(els.body, {
+        eventTarget: this.eventTarget,
+        items: this.items,
+        options: this.options,
+        handleSelect: item => this.handleSelect(item),
+        handleEdit: (editMode, editTarget) => this.handleEdit(editMode, editTarget)
+      });
+      this.toolbarView = new ToolbarView(els.header, {}); // Render.
 
-    dispatch(typeArg, eventInit) {
-      const event = new Event(typeArg, eventInit);
-      return this.dispatchEvent(event);
-    }
-
-    createLayout() {
-      const container = createElement('div', `fbv-container t-${this.options.theme}`);
-      const header = createElement('div', 'fbv-header');
-      const bodyContainer = createElement('div', 'fbv-body-container');
-      const body = createElement('div', 'fbv-body');
-      container.appendChild(header);
-      container.appendChild(bodyContainer);
-      bodyContainer.appendChild(body);
-      this.elements.header = header;
-      this.elements.body = body;
-      this.elements.container = container;
-    }
-
-    drawElements() {
-      this.createLayout();
-      this.fileTreeView = new FileTreeView(this, this.elements.body, this.options);
-      this.toolbarView = new ToolbarView(this, this.elements.header, this.options);
-      this.target.appendChild(this.elements.container);
+      this.target.appendChild(els.container);
     }
 
   }

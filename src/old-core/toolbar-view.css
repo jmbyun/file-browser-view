@@ -1,0 +1,16 @@
+.fbv-toolbar-container {
+  display: flex;
+  padding: 0 0.25rem;
+  flex-flow: row wrap;
+}
+
+.fbv-toolbar-item {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.25rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.fbv-toolbar-item:disabled {
+  cursor: not-allowed;
+}
