@@ -195,6 +195,14 @@
       return this.browserView.dispatch(typeArg, eventInit);
     }
 
+    showAddFileInput() {}
+
+    showAddDirInput() {}
+
+    showRenameInput() {}
+
+    showRemoveConfirm() {}
+
     collapseItem(item) {
       item.collapse();
       const element = this.elements.items[item.path];
@@ -261,7 +269,7 @@
       const icon = createElement('div', 'fbv-tree-item-icon');
       const arrow = createElement('div');
       const title = createElement('div', 'fbv-tree-item-title fbv-text');
-      const info = createElement('div', 'fbv-tree-item-info'); // Setup the structure.
+      const info = createElement('div', 'fbv-tree-item-info'); // Set up the structure.
 
       if (item.dir) {
         icon.appendChild(arrow);
@@ -316,11 +324,62 @@
 
   }
 
-  var css$1 = "[class*='fbv-'] {\n  box-sizing: border-box;\n}\n\n.fbv-container {\n  display: flex;\n  position: relative;\n  width: 100%;\n  height: 100%;\n}\n\n.fbv-header {\n  flex: 0 0 auto;\n  position: relative;\n}\n\n.fbv-body-container {\n  flex: 1 1 auto;\n  position: relative;\n}\n\n.fbv-body {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n}\n";
+  var css$1 = ".fbv-toolbar-container {\n  display: flex;\n  padding: 0 0.25rem;\n  flex-flow: row wrap;\n}\n\n.fbv-toolbar-item {\n  flex: 0 0 auto;\n  padding: 0.25rem 0.25rem;\n  font-size: 1rem;\n  cursor: pointer;\n}\n\n.fbv-toolbar-item:disabled {\n  cursor: not-allowed;\n}\n";
   styleInject(css$1);
 
-  var css$2 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-tree-row-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-tree-row-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-tree-arrow-down {\n  border-top-color: #222;\n}\n\n.fbv-container.t-default-light .fbv-tree-arrow-right {\n  border-left-color: #222;\n}\n\n";
+  class ToolbarView {
+    constructor(browserView, target, options) {
+      this.browserView = browserView;
+      this.target = target;
+      this.elements = {};
+      this.options = options;
+      this.drawElements();
+    }
+
+    createLayout() {
+      const container = createElement('div', 'fbv-toolbar-container');
+      const newFile = createElement('div', 'fbv-toolbar-item fbv-text');
+      const newDir = createElement('div', 'fbv-toolbar-item fbv-text');
+      const rename = createElement('div', 'fbv-toolbar-item fbv-text');
+      const remove = createElement('div', 'fbv-toolbar-item fbv-text'); // Set up the structure.
+
+      container.appendChild(newFile);
+      container.appendChild(newDir);
+      container.appendChild(rename);
+      container.appendChild(remove); // Set attrubutes & values.
+
+      newFile.appendChild(createElement('i', 'fa fa-file'));
+      newDir.appendChild(createElement('i', 'fa fa-folder'));
+      rename.appendChild(createElement('i', 'fa fa-pencil'));
+      remove.appendChild(createElement('i', 'fa fa-trash')); // Bind listeners.
+
+      const fileTreeView = this.browserView.fileTreeView;
+      newFile.addEventListener('click', () => fileTreeView.showAddFileInput());
+      newDir.addEventListener('click', () => fileTreeView.showAddDirInput());
+      rename.addEventListener('click', () => fileTreeView.showRenameInput());
+      remove.addEventListener('click', () => fileTreeView.showRemoveConfirm());
+      this.elements.container = container;
+      this.elements.buttons = {
+        newFile,
+        newDir,
+        rename,
+        remove
+      };
+    }
+
+    drawElements() {
+      this.target.innerHTML = '';
+      this.createLayout();
+      this.target.appendChild(this.elements.container);
+    }
+
+  }
+
+  var css$2 = "[class*='fbv-'] {\n  box-sizing: border-box;\n}\n\n.fbv-container {\n  display: flex;\n  flex-flow: column nowrap;\n  position: relative;\n  width: 100%;\n  height: 100%;\n}\n\n.fbv-header {\n  flex: 0 0 auto;\n  position: relative;\n}\n\n.fbv-body-container {\n  flex: 1 1 auto;\n  position: relative;\n}\n\n.fbv-body {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n}\n";
   styleInject(css$2);
+
+  var css$3 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-container {\n  background-color: #eee;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:hover {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-tree-row-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-tree-row-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-tree-arrow-down {\n  border-top-color: #222;\n}\n\n.fbv-container.t-default-light .fbv-tree-arrow-right {\n  border-left-color: #222;\n}\n\n";
+  styleInject(css$3);
 
   const DEFAULT_OPTIONS$1 = {
     indentSize: 16,
@@ -383,6 +442,7 @@
     drawElements() {
       this.createLayout();
       this.fileTreeView = new FileTreeView(this, this.elements.body, this.options);
+      this.toolbarView = new ToolbarView(this, this.elements.header, this.options);
       this.target.appendChild(this.elements.container);
     }
 

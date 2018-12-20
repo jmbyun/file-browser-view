@@ -2,6 +2,26 @@
   color: #222;
 }
 
+.fbv-container.t-default-light .fbv-toolbar-container {
+  background-color: #eee;
+}
+
+.fbv-container.t-default-light .fbv-toolbar-item {
+  color: #666;
+}
+
+.fbv-container.t-default-light .fbv-toolbar-item:hover {
+  color: #222;
+}
+
+.fbv-container.t-default-light .fbv-toolbar-item:disabled {
+  color: #ccc;
+}
+
+.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {
+  color: #ccc;
+}
+
 .fbv-container.t-default-light .fbv-tree-row-container:hover {
   background-color: #ddd;
 }

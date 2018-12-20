@@ -12,16 +12,37 @@ export default class ToolbarView {
 
   createLayout() {
     const container = createElement('div', 'fbv-toolbar-container');
-    const newFileButton = createElement('div', 'fbv-toolbar-item');
-    const newDirButton = createElement('div', 'fbv-toolbar-item');
-    const renameButton = createElement('div', 'fbv-toolbar-item');
-    const removeButton = createElement('div', 'fbv-toolbar-item');
-    const buttons = {};
-    this.elements.buttons.newFile = createElement('div', 'fbv-toolbar-item');
+    const newFile = createElement('div', 'fbv-toolbar-item fbv-text');
+    const newDir = createElement('div', 'fbv-toolbar-item fbv-text');
+    const rename = createElement('div', 'fbv-toolbar-item fbv-text');
+    const remove = createElement('div', 'fbv-toolbar-item fbv-text');
+    
+    // Set up the structure.
+    container.appendChild(newFile);
+    container.appendChild(newDir);
+    container.appendChild(rename);
+    container.appendChild(remove);
+    
+    // Set attrubutes & values.
+    newFile.appendChild(createElement('i', 'fa fa-file'));
+    newDir.appendChild(createElement('i', 'fa fa-folder'));
+    rename.appendChild(createElement('i', 'fa fa-pencil'));
+    remove.appendChild(createElement('i', 'fa fa-trash'));
 
-    this.elements.buttons = [
-      createElement('div', 'fbv-toolbar-item')
-    ];
+    // Bind listeners.
+    const fileTreeView = this.browserView.fileTreeView;
+    newFile.addEventListener('click', () => fileTreeView.showAddFileInput());
+    newDir.addEventListener('click', () => fileTreeView.showAddDirInput());
+    rename.addEventListener('click', () => fileTreeView.showRenameInput());
+    remove.addEventListener('click', () => fileTreeView.showRemoveConfirm());
+
+    this.elements.container = container;
+    this.elements.buttons = {
+      newFile,
+      newDir,
+      rename,
+      remove,
+    };
   }
 
   drawElements() {

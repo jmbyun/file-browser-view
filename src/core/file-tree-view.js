@@ -25,6 +25,22 @@ export default class FileTreeView {
   dispatch(typeArg, eventInit) {
     return this.browserView.dispatch(typeArg, eventInit);
   }
+  
+  showAddFileInput() {
+
+  }
+
+  showAddDirInput() {
+
+  }
+
+  showRenameInput() {
+
+  }
+
+  showRemoveConfirm() {
+    
+  }
 
   collapseItem(item) {
     item.collapse();
@@ -87,7 +103,7 @@ export default class FileTreeView {
     const title = createElement('div', 'fbv-tree-item-title fbv-text');
     const info = createElement('div', 'fbv-tree-item-info');
 
-    // Setup the structure.
+    // Set up the structure.
     if (item.dir) {
       icon.appendChild(arrow);
     }
