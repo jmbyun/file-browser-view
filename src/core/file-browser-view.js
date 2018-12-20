@@ -1,4 +1,5 @@
 import FileTreeView from './file-tree-view';
+import ToolbarView from './toolbar-view';
 import { createElement } from './render';
 import './file-browser-view.css';
 import '../themes/default-light.css';
@@ -64,6 +65,7 @@ export default class FileBrowserView extends EventTarget {
   drawElements() {
     this.createLayout();
     this.fileTreeView = new FileTreeView(this, this.elements.body, this.options);
+    this.toolbarView = new ToolbarView(this, this.elements.header, this.options);
     this.target.appendChild(this.elements.container);
   }
 }

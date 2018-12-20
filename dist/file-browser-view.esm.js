@@ -128,7 +128,7 @@ class FileTree {
   toValue() {
     const paths = Object.keys(this.items);
     paths.sort();
-    return paths.map(path => this.items[path].toString).join('\n');
+    return paths.map(path => this.items[path].toString()).join('\n');
   }
 
 }
