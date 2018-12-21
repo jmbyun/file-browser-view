@@ -70,8 +70,29 @@ export default class FileBrowserView {
     }
   };
 
-  handleEdit = (editMode, editTarget) => {
-    
+  confirmEdit = (editMode, editTarget, detail) => {
+    const promise = new Promise((resolve, reject) => {
+      this.dispatch(editMode, {
+        cancel: () => reject(),
+        ...detail,
+      });
+    });
+    setTimeout(() => resolve(), 0);
+    return promise;
+  };
+
+  handleEdit = (editMode, editTarget, detail) => {
+    if (editMode === 'newFile') {
+      this.confirmEdit(editMode)
+        .then(() => {
+          editTarget.remove();
+          this.handleAddFile
+        })
+        .catch(() => {
+          editTarget.remove();
+        });
+      console.log('edit', editMode, editTarget, detail);
+    }
   };
 
   // Draw DOM elements in the target element.

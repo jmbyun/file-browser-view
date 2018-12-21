@@ -108,9 +108,12 @@ export default class FileItemView {
     this.options.expand = true;
     els.icon.className = 'fa fa-angle-down';
     els.children.style.display = 'block';
-    this.props.dispatch('expand', { item: this });
     this.updateLine();
     this.props.handleChange(this);
+  }
+
+  remove() {
+    this.target.removeChild(this.elements.container);
   }
 
   handleClickRow(e) {
@@ -123,14 +126,6 @@ export default class FileItemView {
     }
     this.props.handleSelect(this);
   }
-
-  handleEditSubmit = () => {
-    
-  };
-
-  handleEditCancel = () => {
-
-  };
 
   drawIcon() {
     const els = this.elements;
@@ -163,9 +158,9 @@ export default class FileItemView {
       }
       els.input.addEventListener('keyup', e => {
         if (e.keyCode === ENTER_KEY_CODE) {
-          this.handleEditSubmit();
+          this.props.handleEdit('newFile', this, { path: els.input.value });
         } else if (e.keyCode === ESC_KEY_CODE) {
-          this.handleEditCancel();
+          this.props.handleEditCancel();
         }
       });
       els.input.focus();

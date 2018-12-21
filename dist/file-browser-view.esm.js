@@ -66,10 +66,6 @@ const ENTER_KEY_CODE = 13;
 const ESC_KEY_CODE = 27;
 class FileItemView {
   constructor(target, props) {
-    _defineProperty(this, "handleEditSubmit", () => {});
-
-    _defineProperty(this, "handleEditCancel", () => {});
-
     const lineTokens = props.line.split('?');
     this.target = target;
     this.props = props;
@@ -177,11 +173,12 @@ class FileItemView {
     this.options.expand = true;
     els.icon.className = 'fa fa-angle-down';
     els.children.style.display = 'block';
-    this.props.dispatch('expand', {
-      item: this
-    });
     this.updateLine();
     this.props.handleChange(this);
+  }
+
+  remove() {
+    this.target.removeChild(this.elements.container);
   }
 
   handleClickRow(e) {
@@ -239,9 +236,11 @@ class FileItemView {
 
       els.input.addEventListener('keyup', e => {
         if (e.keyCode === ENTER_KEY_CODE) {
-          this.handleEditSubmit();
+          this.props.handleEdit('newFile', this, {
+            path: els.input.value
+          });
         } else if (e.keyCode === ESC_KEY_CODE) {
-          this.handleEditCancel();
+          this.props.handleEditCancel();
         }
       });
       els.input.focus();
@@ -307,6 +306,10 @@ class FileTreeView {
   }
 
   updateEditMode(editMode, editTarget) {
+    const {
+      handleEdit
+    } = this.props;
+
     if (editMode === 'newFile') {
       const itemContainer = createDiv('fbv-tree-item');
       let basePath = '/';
@@ -317,7 +320,8 @@ class FileTreeView {
 
       const line = (basePath === '/' ? '' : basePath) + '_?newFile';
       this.newFileItem = new FileItemView(itemContainer, {
-        line
+        line,
+        handleEdit
       });
 
       if (basePath === '/') {
@@ -336,11 +340,8 @@ class FileTreeView {
     const {
       on,
       dispatch,
-      items,
-      options,
       handleChange,
       handleEditModeChange,
-      handleEdit,
       handleSelect
     } = this.props;
     const els = this.elements;
@@ -355,7 +356,6 @@ class FileTreeView {
         dispatch,
         handleChange,
         handleEditModeChange,
-        handleEdit,
         handleSelect
       });
       els.items[item.path] = itemContainer;
@@ -370,7 +370,6 @@ class FileTreeView {
             dispatch,
             handleChange,
             handleEditModeChange,
-            handleEdit,
             handleSelect
           });
           els.items[ancestor.path] = ancestorContainer;
@@ -502,7 +501,28 @@ class FileBrowserView {
       }
     });
 
-    _defineProperty(this, "handleEdit", (editMode, editTarget) => {});
+    _defineProperty(this, "confirmEdit", (editMode, editTarget, detail) => {
+      const promise = new Promise((resolve, reject) => {
+        this.dispatch(editMode, {
+          cancel: () => reject(),
+          ...detail
+        });
+      });
+      setTimeout(() => resolve(), 0);
+      return promise;
+    });
+
+    _defineProperty(this, "handleEdit", (editMode, editTarget, detail) => {
+      if (editMode === 'newFile') {
+        this.confirmEdit(editMode).then(() => {
+          editTarget.remove();
+          this.handleAddFile;
+        }).catch(() => {
+          editTarget.remove();
+        });
+        console.log('edit', editMode, editTarget, detail);
+      }
+    });
 
     this.eventTarget = new EventTarget();
     this.target = target;
