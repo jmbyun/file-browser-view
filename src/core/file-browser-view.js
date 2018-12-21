@@ -57,8 +57,21 @@ export default class FileBrowserView {
     this.dispatch('select', { item });
   };
 
-  handleEdit = (editMode, editTarget) => {
+  handleEditModeChange = editMode => {
+    if (['rename', 'remove'].includes(editMode) && !this.selectedItem) {
+      return;
+    }
+    this.editMode = editMode;
+    this.editTarget = this.selectedItem;
+    if (editMode === 'remove') {
 
+    } else {
+      this.fileTreeView.updateEditMode(this.editMode, this.editTarget);
+    }
+  };
+
+  handleEdit = (editMode, editTarget) => {
+    
   };
 
   // Draw DOM elements in the target element.
@@ -81,6 +94,7 @@ export default class FileBrowserView {
       options,
       handleChange,
       handleSelect,
+      handleEditModeChange,
       handleEdit,
     } = this;
     this.fileTreeView = new FileTreeView(els.body, {
@@ -90,10 +104,11 @@ export default class FileBrowserView {
       options,
       handleChange,
       handleSelect,
+      handleEditModeChange,
       handleEdit,
     });
     this.toolbarView = new ToolbarView(els.header, {
-
+      handleEditModeChange,
     });
 
     // Render.

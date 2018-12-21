@@ -22,10 +22,22 @@
   font-size: 0.8rem;
 }
 
-.fbv-item-title {
+.fbv-item-main {
   flex: 1 1 auto;
+}
+
+.fbv-item-title {
+  
 }
 
 .fbv-item-children {
 
+}
+
+.fbv-item-input {
+  border-width: 1px;
+  border-style: solid;
+  outline: 0;
+  padding: 0.25rem 0.25rem;
+  width: 100%;
 }

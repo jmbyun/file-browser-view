@@ -8,6 +8,7 @@ export default class FileTreeView {
     this.props = props;
     this.paths = [];
     this.rootItems = [];
+    this.newFileItem = null;
 
     this.elements = {};
     this.draw();
@@ -19,6 +20,26 @@ export default class FileTreeView {
       .filter(line => line !== '');
   }
 
+  updateEditMode(editMode, editTarget) {
+    if (editMode === 'newFile') {
+      const itemContainer = createDiv('fbv-tree-item');
+      let basePath = '/';
+      if (editTarget) {
+        basePath = editTarget.isDir() ? editTarget.path : editTarget.getParentPath();
+      }
+      const line = (basePath === '/' ? '' : basePath) + '_?newFile';
+      this.newFileItem = new FileItemView(itemContainer, { line });
+      if (basePath === '/') {
+        const container = this.elements.container;
+        container.insertBefore(itemContainer, container.firstChild);
+      } else {
+        const baseItem = this.props.items[basePath];
+        baseItem.expand();
+        baseItem.insertTempChild(itemContainer);
+      }
+    }
+  }
+
   // Draw DOM elements in the target element.
   draw() {
     const {
@@ -27,8 +48,9 @@ export default class FileTreeView {
       items,
       options,
       handleChange,
-      handleSelect,
+      handleEditModeChange,
       handleEdit,
+      handleSelect,
     } = this.props;
     const els = this.elements;
     els.container = createDiv('fbv-tree-container');
@@ -42,6 +64,8 @@ export default class FileTreeView {
         on,
         dispatch,
         handleChange,
+        handleEditModeChange,
+        handleEdit,
         handleSelect,
       });
       els.items[item.path] = itemContainer;
@@ -54,6 +78,8 @@ export default class FileTreeView {
             on,
             dispatch,
             handleChange,
+            handleEditModeChange,
+            handleEdit,
             handleSelect,
           });
           els.items[ancestor.path] = ancestorContainer;

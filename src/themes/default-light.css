@@ -34,7 +34,8 @@
   color: #222;
 }
 
-.fbv-container.t-default-light .fbv-tree-input {
+.fbv-container.t-default-light .fbv-item-input {
   border-color: #999;
   background-color: #eee;
+  color: #222;
 }
