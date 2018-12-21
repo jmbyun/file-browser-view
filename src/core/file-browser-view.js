@@ -29,17 +29,37 @@ export default class FileBrowserView {
     this.draw();
   }
 
-  on(type, listener) {
+  getValue() {
+    const paths = Object.keys(this.items);
+    paths.sort((a, b) => a > b ? 1 : -1);
+    return paths.map(p => this.items[p].line).join('\n');
+  }
+
+  on = (type, listener) => {
     this.eventTarget.addEventListener(type, listener);
-  }
+  };
 
-  handleSelect(item) {
+  dispatch = (typeArg, eventInit) => {
+    const event = new Event(typeArg, eventInit);
+    return this.eventTarget.dispatchEvent(event);
+  };
 
-  }
+  handleChange = item => {
+    this.dispatch('change', { item });
+  };
 
-  handleEdit(editMode, editTarget) {
+  handleSelect = item => {
+    if (this.selectedItem) {
+      this.selectedItem.unselect();
+    }
+    item.select();
+    this.selectedItem = item;
+    this.dispatch('select', { item });
+  };
 
-  }
+  handleEdit = (editMode, editTarget) => {
+
+  };
 
   // Draw DOM elements in the target element.
   draw() {
@@ -54,12 +74,23 @@ export default class FileBrowserView {
     els.bodyContainer.appendChild(els.body);
 
     // Bind children.
+    const { 
+      on,
+      dispatch,
+      items,
+      options,
+      handleChange,
+      handleSelect,
+      handleEdit,
+    } = this;
     this.fileTreeView = new FileTreeView(els.body, {
-      eventTarget: this.eventTarget,
-      items: this.items,
-      options: this.options,
-      handleSelect: item => this.handleSelect(item),
-      handleEdit: (editMode, editTarget) => this.handleEdit(editMode, editTarget),
+      on,
+      dispatch,
+      items,
+      options,
+      handleChange,
+      handleSelect,
+      handleEdit,
     });
     this.toolbarView = new ToolbarView(els.header, {
 

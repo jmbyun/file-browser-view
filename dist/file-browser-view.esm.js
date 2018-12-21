@@ -1,3 +1,18 @@
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
 function createElement(tag, className, style) {
   const element = document.createElement(tag);
   element.className = className;
@@ -43,14 +58,16 @@ function styleInject(css, ref) {
   }
 }
 
-var css = ".fbv-item-container {\n  padding: 0 0.5rem;\n}\n\n.fbv-item-row {\n  display: flex;\n  align-items: center;\n  flex-flow: row nowrap;\n  padding-top: 0.1rem;\n  padding-bottom: 0.1rem;\n  cursor: pointer;\n}\n\n.fbv-item-icon {\n  flex: 0 0 auto;\n  min-width: 1.25rem;\n  padding-right: 0.5rem;\n  font-size: 0.8rem;\n}\n\n.fbv-item-title {\n  flex: 1 1 auto;\n}\n\n.fbv-item-children {\n\n}";
+var css = ".fbv-item-container {\n  padding: 0;\n}\n\n.fbv-item-row-container {\n  padding: 0 0.5rem;\n}\n\n.fbv-item-row {\n  display: flex;\n  align-items: center;\n  flex-flow: row nowrap;\n  padding-top: 0.1rem;\n  padding-bottom: 0.1rem;\n  cursor: pointer;\n}\n\n.fbv-item-icon {\n  flex: 0 0 auto;\n  min-width: 1.25rem;\n  padding-right: 0.5rem;\n  font-size: 0.8rem;\n}\n\n.fbv-item-title {\n  flex: 1 1 auto;\n}\n\n.fbv-item-children {\n\n}";
 styleInject(css);
 
+const INDENT_SIZE = 0.5;
 class FileItemView {
-  constructor(target, line) {
-    const lineTokens = line.split('?');
+  constructor(target, props) {
+    const lineTokens = props.line.split('?');
     this.target = target;
-    this.line = line;
+    this.props = props;
+    this.line = props.line;
     this.path = lineTokens[0].replace('*', '').trim();
     this.options = {
       expand: lineTokens[0].endsWith('*'),
@@ -62,6 +79,13 @@ class FileItemView {
     this.children = [];
     this.elements = {};
     this.draw();
+  }
+
+  updateLine() {
+    const params = Object.keys(this.options).filter(key => !['expand', 'dir'].includes(key)).map(key => `${encodeURIComponent(key)}=${encodeURIComponent(this.options[key])}`).join('&');
+    const expand = this.options.expand ? '*' : '';
+    const separator = params ? '?' : '';
+    this.line = `${this.path}${expand}${separator}${params}`;
   }
 
   parseOptions(query) {
@@ -99,6 +123,49 @@ class FileItemView {
     this.elements.children.appendChild(child.target);
   }
 
+  select() {
+    const els = this.elements;
+    els.rowContainer.classList.add('fbv-item-row-container--active');
+  }
+
+  unselect() {
+    const els = this.elements;
+    els.rowContainer.classList.remove('fbv-item-row-container--active');
+  }
+
+  collapse() {
+    const els = this.elements;
+    this.options.expand = false;
+    els.icon.className = 'fa fa-angle-right';
+    els.children.style.display = 'none';
+    this.updateLine();
+    this.props.handleChange(this);
+  }
+
+  expand() {
+    const els = this.elements;
+    this.options.expand = true;
+    els.icon.className = 'fa fa-angle-down';
+    els.children.style.display = 'block';
+    this.props.dispatch('expand', {
+      item: this
+    });
+    this.updateLine();
+    this.props.handleChange(this);
+  }
+
+  handleClickRow(e) {
+    if (this.options.dir) {
+      if (this.options.expand) {
+        this.collapse();
+      } else {
+        this.expand();
+      }
+    }
+
+    this.props.handleSelect(this);
+  }
+
   drawIcon() {
     const els = this.elements;
 
@@ -115,11 +182,14 @@ class FileItemView {
 
 
   draw() {
+    // Create and structure elements.
     this.drawIcon();
     const els = this.elements;
     els.container = createDiv('fbv-item-container');
+    els.rowContainer = createDiv('fbv-item-row-container');
+    els.container.appendChild(els.rowContainer);
     els.row = createDiv('fbv-item-row');
-    els.container.appendChild(els.row);
+    els.rowContainer.appendChild(els.row);
     els.iconContainer = createDiv('fbv-item-icon');
     els.row.appendChild(els.iconContainer);
     els.iconContainer.appendChild(els.icon);
@@ -127,14 +197,17 @@ class FileItemView {
     els.title.innerHTML = this.title;
     els.row.appendChild(els.title);
     els.children = createDiv('fbv-item-children');
-    els.container.appendChild(els.children);
+    els.container.appendChild(els.children); // Set padding left according to the depth of the item.
+
     const depth = this.pathTokens.length - 1;
-    els.row.style.paddingLeft = `${depth}rem`;
+    els.row.style.paddingLeft = `${depth * INDENT_SIZE}rem`; // Set visibility of the children.
 
     if (!this.options.expand) {
       els.children.style.display = 'none';
-    }
+    } // Bind listeners to elements.
 
+
+    els.row.addEventListener('click', e => this.handleClickRow(e));
     this.target.appendChild(els.container);
   }
 
@@ -159,20 +232,41 @@ class FileTreeView {
 
 
   draw() {
+    const {
+      on,
+      dispatch,
+      items,
+      options,
+      handleChange,
+      handleSelect,
+      handleEdit
+    } = this.props;
     const els = this.elements;
     els.container = createDiv('fbv-tree-container');
     els.items = {}; // Create all required FileItemView instances. 
 
     for (const line of this.getValueLines()) {
       const itemContainer = createDiv('fbv-tree-item');
-      const item = new FileItemView(itemContainer, line);
+      const item = new FileItemView(itemContainer, {
+        line,
+        on,
+        dispatch,
+        handleChange,
+        handleSelect
+      });
       els.items[item.path] = itemContainer;
       this.props.items[item.path] = item;
 
       for (const ancestorPath of item.getAncestorPaths()) {
         if (!this.props.items[ancestorPath]) {
           const ancestorContainer = createDiv('fbv-tree-item');
-          const ancestor = new FileItemView(ancestorContainer, ancestorPath);
+          const ancestor = new FileItemView(ancestorContainer, {
+            line: ancestorPath,
+            on,
+            dispatch,
+            handleChange,
+            handleSelect
+          });
           els.items[ancestor.path] = ancestorContainer;
           this.props.items[ancestor.path] = ancestor;
         }
@@ -258,7 +352,7 @@ class ToolbarView {
 var css$3 = "[class*='fbv-'] {\n  box-sizing: border-box;\n}\n\n.fbv-container {\n  display: flex;\n  flex-flow: column nowrap;\n  position: relative;\n  width: 100%;\n  height: 100%;\n  font-size: 0.875rem;\n  line-height: 1.125rem;\n}\n\n.fbv-header {\n  flex: 0 0 auto;\n  position: relative;\n}\n\n.fbv-body-container {\n  flex: 1 1 auto;\n  position: relative;\n}\n\n.fbv-body {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n}\n";
 styleInject(css$3);
 
-var css$4 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-container {\n  background-color: #eee;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:hover {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-item-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-icon {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-tree-input {\n  border-color: #999;\n  background-color: #eee;\n}";
+var css$4 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-container {\n  background-color: #eee;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:hover {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-row-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-item-row-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-icon {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-tree-input {\n  border-color: #999;\n  background-color: #eee;\n}";
 styleInject(css$4);
 
 const DEFAULT_OPTIONS = {
@@ -270,6 +364,35 @@ const DEFAULT_OPTIONS = {
 };
 class FileBrowserView {
   constructor(target, options = {}) {
+    _defineProperty(this, "on", (type, listener) => {
+      this.eventTarget.addEventListener(type, listener);
+    });
+
+    _defineProperty(this, "dispatch", (typeArg, eventInit) => {
+      const event = new Event(typeArg, eventInit);
+      return this.eventTarget.dispatchEvent(event);
+    });
+
+    _defineProperty(this, "handleChange", item => {
+      this.dispatch('change', {
+        item
+      });
+    });
+
+    _defineProperty(this, "handleSelect", item => {
+      if (this.selectedItem) {
+        this.selectedItem.unselect();
+      }
+
+      item.select();
+      this.selectedItem = item;
+      this.dispatch('select', {
+        item
+      });
+    });
+
+    _defineProperty(this, "handleEdit", (editMode, editTarget) => {});
+
     this.eventTarget = new EventTarget();
     this.target = target;
     this.options = { ...DEFAULT_OPTIONS,
@@ -283,15 +406,13 @@ class FileBrowserView {
     this.draw();
   }
 
-  on(type, listener) {
-    this.eventTarget.addEventListener(type, listener);
+  getValue() {
+    const paths = Object.keys(this.items);
+    paths.sort((a, b) => a > b ? 1 : -1);
+    return paths.map(p => this.items[p].line).join('\n');
   }
 
-  handleSelect(item) {}
-
-  handleEdit(editMode, editTarget) {} // Draw DOM elements in the target element.
-
-
+  // Draw DOM elements in the target element.
   draw() {
     // Create elements.
     const els = this.elements;
@@ -303,12 +424,23 @@ class FileBrowserView {
     els.body = createDiv('fbv-body');
     els.bodyContainer.appendChild(els.body); // Bind children.
 
+    const {
+      on,
+      dispatch,
+      items,
+      options,
+      handleChange,
+      handleSelect,
+      handleEdit
+    } = this;
     this.fileTreeView = new FileTreeView(els.body, {
-      eventTarget: this.eventTarget,
-      items: this.items,
-      options: this.options,
-      handleSelect: item => this.handleSelect(item),
-      handleEdit: (editMode, editTarget) => this.handleEdit(editMode, editTarget)
+      on,
+      dispatch,
+      items,
+      options,
+      handleChange,
+      handleSelect,
+      handleEdit
     });
     this.toolbarView = new ToolbarView(els.header, {}); // Render.
 

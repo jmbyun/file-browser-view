@@ -1,4 +1,8 @@
 .fbv-item-container {
+  padding: 0;
+}
+
+.fbv-item-row-container {
   padding: 0 0.5rem;
 }
 

@@ -21,6 +21,15 @@ export default class FileTreeView {
 
   // Draw DOM elements in the target element.
   draw() {
+    const {
+      on,
+      dispatch,
+      items,
+      options,
+      handleChange,
+      handleSelect,
+      handleEdit,
+    } = this.props;
     const els = this.elements;
     els.container = createDiv('fbv-tree-container');
     els.items = {};
@@ -28,13 +37,25 @@ export default class FileTreeView {
     // Create all required FileItemView instances. 
     for (const line of this.getValueLines()) {
       const itemContainer = createDiv('fbv-tree-item');
-      const item = new FileItemView(itemContainer, line);
+      const item = new FileItemView(itemContainer, {
+        line,
+        on,
+        dispatch,
+        handleChange,
+        handleSelect,
+      });
       els.items[item.path] = itemContainer;
       this.props.items[item.path] = item;
       for (const ancestorPath of item.getAncestorPaths()) {
         if (!this.props.items[ancestorPath]) {
           const ancestorContainer = createDiv('fbv-tree-item');
-          const ancestor = new FileItemView(ancestorContainer, ancestorPath);
+          const ancestor = new FileItemView(ancestorContainer, {
+            line: ancestorPath,
+            on,
+            dispatch,
+            handleChange,
+            handleSelect,
+          });
           els.items[ancestor.path] = ancestorContainer;
           this.props.items[ancestor.path] = ancestor;
         }

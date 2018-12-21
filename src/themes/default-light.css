@@ -22,11 +22,11 @@
   color: #ccc;
 }
 
-.fbv-container.t-default-light .fbv-item-container:hover {
+.fbv-container.t-default-light .fbv-item-row-container:hover {
   background-color: #ddd;
 }
 
-.fbv-container.t-default-light .fbv-item-container--active {
+.fbv-container.t-default-light .fbv-item-row-container--active {
   background-color: #ccc;
 }
 
