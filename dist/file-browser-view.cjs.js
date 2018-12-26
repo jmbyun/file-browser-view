@@ -294,58 +294,121 @@ styleInject(css$1);
 
 class FileTreeView {
   constructor(target, props) {
+    _defineProperty(this, "hideEditor", () => {
+      if (this.addFileItem) {
+        this.addFileItem.remove();
+        this.addFileItem = null;
+      }
+    });
+
+    _defineProperty(this, "handleSelect", item => {
+      this.hideEditor();
+
+      if (this.selectedItem) {
+        this.selectedItem.unselect();
+      }
+
+      item.select();
+      this.selectedItem = item;
+      this.props.dispatch('select', {
+        item
+      });
+    });
+
     this.target = target;
     this.props = props;
+    this.items = {};
     this.paths = [];
     this.rootItems = [];
-    this.newFileItem = null;
+    this.selectedItem = null;
+    this.addFileItem = null;
     this.elements = {};
     this.draw();
+  }
+
+  getValue() {
+    return this.paths.map(p => this.items[p].line).join('\n');
   }
 
   getValueLines() {
     return this.props.options.value.split('\n').map(line => line.trim()).filter(line => line !== '');
   }
 
-  updateEditMode(editMode, editTarget) {
-    const {
-      handleEdit
-    } = this.props;
+  showAddFile() {
+    this.hideEditor();
+    const item = this.selectedItem;
+    const itemContainer = createDiv('fbv-tree-item');
+    let basePath = '/';
 
-    if (editMode === 'newFile') {
-      const itemContainer = createDiv('fbv-tree-item');
-      let basePath = '/';
-
-      if (editTarget) {
-        basePath = editTarget.isDir() ? editTarget.path : editTarget.getParentPath();
-      }
-
-      const line = (basePath === '/' ? '' : basePath) + '_?newFile';
-      this.newFileItem = new FileItemView(itemContainer, {
-        line,
-        handleEdit
-      });
-
-      if (basePath === '/') {
-        const container = this.elements.container;
-        container.insertBefore(itemContainer, container.firstChild);
-      } else {
-        const baseItem = this.props.items[basePath];
-        baseItem.expand();
-        baseItem.insertTempChild(itemContainer);
-      }
+    if (item) {
+      basePath = item.isDir() ? item.path : item.getParentPath();
     }
-  } // Draw DOM elements in the target element.
+
+    const line = (basePath === '/' ? '' : basePath) + '_?newFile';
+    this.addFileItem = new FileItemView(itemContainer, {
+      line,
+      handleEdit: this.addFile,
+      handleEditCancel: this.hideEditor
+    });
+
+    if (basePath === '/') {
+      const container = this.elements.container;
+      container.insertBefore(itemContainer, container.firstChild);
+    } else {
+      const baseItem = this.items[basePath];
+      baseItem.expand();
+      baseItem.insertTempChild(itemContainer);
+    }
+  }
+
+  showAddDir() {}
+
+  showEdit() {}
+
+  showRemove() {}
+
+  addFile() {}
+
+  addDir() {}
+
+  editItem() {}
+
+  removeItem() {} // updateEditMode(editMode, editTarget) {
+  //   const { handleEdit, handleEditCancel } = this.props;
+  //   if (editMode === 'newFile') {
+  //     const itemContainer = createDiv('fbv-tree-item');
+  //     let basePath = '/';
+  //     if (editTarget) {
+  //       basePath = editTarget.isDir() ? editTarget.path : editTarget.getParentPath();
+  //     }
+  //     const line = (basePath === '/' ? '' : basePath) + '_?newFile';
+  //     this.newFileItem = new FileItemView(itemContainer, { 
+  //       line, 
+  //       handleEdit,
+  //       handleEditCancel,
+  //     });
+  //     if (basePath === '/') {
+  //       const container = this.elements.container;
+  //       container.insertBefore(itemContainer, container.firstChild);
+  //     } else {
+  //       const baseItem = this.items[basePath];
+  //       baseItem.expand();
+  //       baseItem.insertTempChild(itemContainer);
+  //     }
+  //   }
+  // }
 
 
+  // Draw DOM elements in the target element.
   draw() {
     const {
       on,
       dispatch,
       handleChange,
-      handleEditModeChange,
-      handleSelect
+      handleEditModeChange // handleSelect,
+
     } = this.props;
+    const handleSelect = this.handleSelect;
     const els = this.elements;
     els.container = createDiv('fbv-tree-container');
     els.items = {}; // Create all required FileItemView instances. 
@@ -361,10 +424,10 @@ class FileTreeView {
         handleSelect
       });
       els.items[item.path] = itemContainer;
-      this.props.items[item.path] = item;
+      this.items[item.path] = item;
 
       for (const ancestorPath of item.getAncestorPaths()) {
-        if (!this.props.items[ancestorPath]) {
+        if (!this.items[ancestorPath]) {
           const ancestorContainer = createDiv('fbv-tree-item');
           const ancestor = new FileItemView(ancestorContainer, {
             line: ancestorPath,
@@ -375,23 +438,23 @@ class FileTreeView {
             handleSelect
           });
           els.items[ancestor.path] = ancestorContainer;
-          this.props.items[ancestor.path] = ancestor;
+          this.items[ancestor.path] = ancestor;
         }
       }
     } // Sort items.
 
 
-    this.paths = Object.keys(this.props.items);
+    this.paths = Object.keys(this.items);
     this.paths.sort((a, b) => a > b ? 1 : -1); // Set hierarchy between items.
 
     for (const path of this.paths) {
-      const item = this.props.items[path];
+      const item = this.items[path];
       const parentPath = item.getParentPath();
 
       if (parentPath === '/') {
         this.rootItems.push(item);
       } else {
-        this.props.items[parentPath].addChild(item);
+        this.items[parentPath].addChild(item);
       }
     } // Draw root items.
 
@@ -478,28 +541,36 @@ class FileBrowserView {
       });
     });
 
-    _defineProperty(this, "handleSelect", item => {
-      if (this.selectedItem) {
-        this.selectedItem.unselect();
-      }
-
-      item.select();
-      this.selectedItem = item;
-      this.dispatch('select', {
-        item
-      });
-    });
-
     _defineProperty(this, "handleEditModeChange", editMode => {
-      if (['rename', 'remove'].includes(editMode) && !this.selectedItem) {
-        return;
-      }
+      // if (['rename', 'remove'].includes(editMode) && !this.selectedItem) {
+      //   return;
+      // }
+      // this.fileTreeView.editModeChange(editMode)
+      // this.editMode = editMode;
+      // this.editTarget = this.selectedItem;
+      // if (editMode === 'remove') {
+      // } else {
+      //   this.fileTreeView.updateEditMode(this.editMode, this.editTarget);
+      // }
+      switch (editMode) {
+        case 'newFile':
+          this.fileTreeView.showAddFile();
+          break;
 
-      this.editMode = editMode;
-      this.editTarget = this.selectedItem;
+        case 'newDir':
+          this.fileTreeView.showAddDir();
+          break;
 
-      if (editMode === 'remove') ; else {
-        this.fileTreeView.updateEditMode(this.editMode, this.editTarget);
+        case 'rename':
+          this.fileTreeView.showEdit();
+          break;
+
+        case 'remove':
+          this.fileTreeView.showRemove();
+          break;
+
+        default:
+          break;
       }
     });
 
@@ -510,7 +581,7 @@ class FileBrowserView {
           ...detail
         });
       });
-      setTimeout(() => resolve(), 0);
+      setTimeout(() => promise.resolve(), 0);
       return promise;
     });
 
@@ -530,21 +601,20 @@ class FileBrowserView {
     this.target = target;
     this.options = { ...DEFAULT_OPTIONS,
       ...options
-    };
-    this.selectedItem = null;
-    this.editMode = null;
-    this.editTarget = null;
-    this.items = {};
+    }; // this.selectedItem = null;
+    // this.editMode = null;
+    // this.editTarget = null;
+
     this.elements = {};
     this.draw();
   }
 
   getValue() {
-    const paths = Object.keys(this.items);
-    paths.sort((a, b) => a > b ? 1 : -1);
-    return paths.map(p => this.items[p].line).join('\n');
+    return this.fileTreeView.getValue();
   }
 
+  // handleEditCancel = () => {
+  // };
   // Draw DOM elements in the target element.
   draw() {
     // Create elements.
@@ -560,22 +630,24 @@ class FileBrowserView {
     const {
       on,
       dispatch,
-      items,
+      // items,
       options,
       handleChange,
       handleSelect,
       handleEditModeChange,
-      handleEdit
+      handleEdit // handleEditCancel,
+
     } = this;
     this.fileTreeView = new FileTreeView(els.body, {
       on,
       dispatch,
-      items,
+      // items,
       options,
       handleChange,
-      handleSelect,
-      handleEditModeChange,
-      handleEdit
+      // handleSelect,
+      // handleEditModeChange,
+      handleEdit // handleEditCancel,
+
     });
     this.toolbarView = new ToolbarView(els.header, {
       handleEditModeChange

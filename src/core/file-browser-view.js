@@ -20,19 +20,16 @@ export default class FileBrowserView {
       ...DEFAULT_OPTIONS,
       ...options,
     };
-    this.selectedItem = null;
-    this.editMode = null;
-    this.editTarget = null;
-    this.items = {};
-
+    // this.selectedItem = null;
+    // this.editMode = null;
+    // this.editTarget = null;
+    
     this.elements = {};
     this.draw();
   }
 
   getValue() {
-    const paths = Object.keys(this.items);
-    paths.sort((a, b) => a > b ? 1 : -1);
-    return paths.map(p => this.items[p].line).join('\n');
+    return this.fileTreeView.getValue();
   }
 
   on = (type, listener) => {
@@ -48,25 +45,46 @@ export default class FileBrowserView {
     this.dispatch('change', { item });
   };
 
-  handleSelect = item => {
-    if (this.selectedItem) {
-      this.selectedItem.unselect();
-    }
-    item.select();
-    this.selectedItem = item;
-    this.dispatch('select', { item });
-  };
+  // handleSelect = item => {
+  //   if (this.selectedItem) {
+  //     this.selectedItem.unselect();
+  //   }
+  //   item.select();
+  //   this.selectedItem = item;
+  //   this.dispatch('select', { item });
+  // };
 
   handleEditModeChange = editMode => {
-    if (['rename', 'remove'].includes(editMode) && !this.selectedItem) {
-      return;
-    }
-    this.editMode = editMode;
-    this.editTarget = this.selectedItem;
-    if (editMode === 'remove') {
+    // if (['rename', 'remove'].includes(editMode) && !this.selectedItem) {
+    //   return;
+    // }
+    // this.fileTreeView.editModeChange(editMode)
+    // this.editMode = editMode;
+    // this.editTarget = this.selectedItem;
+    // if (editMode === 'remove') {
 
-    } else {
-      this.fileTreeView.updateEditMode(this.editMode, this.editTarget);
+    // } else {
+    //   this.fileTreeView.updateEditMode(this.editMode, this.editTarget);
+    // }
+    switch (editMode) {
+      case 'newFile':
+        this.fileTreeView.showAddFile();
+        break;
+
+      case 'newDir':
+        this.fileTreeView.showAddDir();
+        break;
+
+      case 'rename':
+        this.fileTreeView.showEdit();
+        break;
+
+      case 'remove':
+        this.fileTreeView.showRemove();
+        break;
+
+      default:
+        break;
     }
   };
 
@@ -77,7 +95,7 @@ export default class FileBrowserView {
         ...detail,
       });
     });
-    setTimeout(() => resolve(), 0);
+    setTimeout(() => promise.resolve(), 0);
     return promise;
   };
 
@@ -95,6 +113,10 @@ export default class FileBrowserView {
     }
   };
 
+  // handleEditCancel = () => {
+
+  // };
+
   // Draw DOM elements in the target element.
   draw() {
     // Create elements.
@@ -111,22 +133,24 @@ export default class FileBrowserView {
     const { 
       on,
       dispatch,
-      items,
+      // items,
       options,
       handleChange,
       handleSelect,
       handleEditModeChange,
       handleEdit,
+      // handleEditCancel,
     } = this;
     this.fileTreeView = new FileTreeView(els.body, {
       on,
       dispatch,
-      items,
+      // items,
       options,
       handleChange,
-      handleSelect,
-      handleEditModeChange,
+      // handleSelect,
+      // handleEditModeChange,
       handleEdit,
+      // handleEditCancel,
     });
     this.toolbarView = new ToolbarView(els.header, {
       handleEditModeChange,
