@@ -142,7 +142,6 @@ export default class FileItemView {
 
   rename(title) {
     delete this.options['rename'];
-    console.log('new title', title);
     this.title = title;
     this.path = [
       this.getParentPath(),
@@ -151,6 +150,7 @@ export default class FileItemView {
     ].join('');
     this.updateLine();
     this.drawMainItem();
+    this.props.handleChange(this);
   }
 
   remove() {

@@ -52,7 +52,7 @@ export default class FileBrowserView {
         break;
 
       case 'rename':
-        this.fileTreeView.showEdit();
+        this.fileTreeView.showRename();
         break;
 
       case 'remove':

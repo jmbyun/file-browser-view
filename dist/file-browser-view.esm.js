@@ -212,11 +212,11 @@ class FileItemView {
 
   rename(title) {
     delete this.options['rename'];
-    console.log('new title', title);
     this.title = title;
     this.path = [this.getParentPath(), title, this.options.dir ? '/' : ''].join('');
     this.updateLine();
     this.drawMainItem();
+    this.props.handleChange(this);
   }
 
   remove() {
@@ -413,7 +413,6 @@ class FileTreeView {
         if (item.isDir()) {
           Object.keys(this.items).filter(key => this.items[key].path.startsWith(oldPath)).forEach(key => {
             const i = this.items[key];
-            console.log('key', key);
             i.path = i.path.replace(oldPath, item.path);
             i.updateLine();
           });
@@ -515,7 +514,7 @@ class FileTreeView {
     this.showAddItem(true);
   }
 
-  showEdit() {
+  showRename() {
     this.hideEditor();
     const item = this.selectedItem;
 
@@ -683,7 +682,7 @@ class FileBrowserView {
           break;
 
         case 'rename':
-          this.fileTreeView.showEdit();
+          this.fileTreeView.showRename();
           break;
 
         case 'remove':

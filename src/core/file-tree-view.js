@@ -83,7 +83,7 @@ export default class FileTreeView {
     this.showAddItem(true);
   }
 
-  showEdit() {
+  showRename() {
     this.hideEditor();
     const item = this.selectedItem;
     if (!item) {
@@ -175,7 +175,6 @@ export default class FileTreeView {
             .filter(key => this.items[key].path.startsWith(oldPath))
             .forEach(key => {
               const i = this.items[key];
-              console.log('key', key);
               i.path = i.path.replace(oldPath, item.path);
               i.updateLine();
             });
