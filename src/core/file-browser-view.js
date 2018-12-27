@@ -89,28 +89,20 @@ export default class FileBrowserView {
   };
 
   confirmEdit = (editMode, editTarget, detail) => {
+    const methods = {};
     const promise = new Promise((resolve, reject) => {
+      methods.resolve = () => resolve();
       this.dispatch(editMode, {
         cancel: () => reject(),
         ...detail,
       });
     });
-    setTimeout(() => promise.resolve(), 0);
+    setTimeout(() => methods.resolve(), 0);
     return promise;
   };
 
   handleEdit = (editMode, editTarget, detail) => {
-    if (editMode === 'newFile') {
-      this.confirmEdit(editMode)
-        .then(() => {
-          editTarget.remove();
-          this.handleAddFile
-        })
-        .catch(() => {
-          editTarget.remove();
-        });
-      console.log('edit', editMode, editTarget, detail);
-    }
+    return this.confirmEdit(editMode, editTarget, detail);
   };
 
   // handleEditCancel = () => {

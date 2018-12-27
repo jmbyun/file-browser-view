@@ -158,7 +158,7 @@ export default class FileItemView {
       }
       els.input.addEventListener('keyup', e => {
         if (e.keyCode === ENTER_KEY_CODE) {
-          this.props.handleEdit('newFile', this, { path: els.input.value });
+          this.props.handleEdit(this, { title: els.input.value });
         } else if (e.keyCode === ESC_KEY_CODE) {
           this.props.handleEditCancel();
         }

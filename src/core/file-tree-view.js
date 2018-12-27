@@ -69,9 +69,39 @@ export default class FileTreeView {
     }
   };
 
-  addFile() {
-    
-  }
+  addFile = (item, detail) => {
+    const { title } = detail;
+    const basePath = this.addFileItem.getParentPath();
+    const path = basePath === '/' ? title : basePath + title;
+    const els = this.elements;
+    const {
+      on,
+      dispatch,
+      handleChange,
+    } = this.props;
+    const handleSelect = this.handleSelect;
+    this.props.handleEdit('newFile', item, detail)
+      .then(() => {
+        const itemContainer = createDiv('fbv-tree-item');
+        const item = new FileItemView(itemContainer, {
+          line: path,
+          on,
+          dispatch,
+          handleChange,
+          handleSelect,
+        });
+        els.items[item.path] = itemContainer;
+        this.items[item.path] = item;
+        const parentPath = item.getParentPath();
+        if (parentPath === '/') {
+          this.rootItems.push(item);
+          els.container.appendChild(item.target);
+        } else {
+          this.items[parentPath].addChild(item);
+        }
+      });
+    this.hideEditor();
+  };
 
   addDir() {
 
@@ -126,7 +156,6 @@ export default class FileTreeView {
       on,
       dispatch,
       handleChange,
-      handleEditModeChange,
       // handleSelect,
     } = this.props;
     const handleSelect = this.handleSelect;
@@ -142,7 +171,6 @@ export default class FileTreeView {
         on,
         dispatch,
         handleChange,
-        handleEditModeChange,
         handleSelect,
       });
       els.items[item.path] = itemContainer;
@@ -155,7 +183,6 @@ export default class FileTreeView {
             on,
             dispatch,
             handleChange,
-            handleEditModeChange,
             handleSelect,
           });
           els.items[ancestor.path] = ancestorContainer;
@@ -177,6 +204,7 @@ export default class FileTreeView {
       } else {
         this.items[parentPath].addChild(item);
       }
+      // TODO: Sort!
     }
     
     // Draw root items.
