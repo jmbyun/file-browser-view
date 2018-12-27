@@ -74,6 +74,10 @@
   const ESC_KEY_CODE = 27;
   class FileItemView {
     constructor(target, props) {
+      _defineProperty(this, "focusInput", () => {
+        this.elements.input.focus();
+      });
+
       const lineTokens = props.line.split('?');
       this.target = target;
       this.props = props;
@@ -152,9 +156,24 @@
       }
     }
 
-    addChild(child) {
+    appendChild(child) {
       this.children.push(child);
       this.elements.children.appendChild(child.target);
+    }
+
+    addChild(child) {
+      const els = this.elements;
+      const items = this.children;
+      items.push(child);
+      items.sort((a, b) => a.path > b.path ? 1 : -1);
+      const index = items.indexOf(child);
+
+      if (index === items.length - 1) {
+        els.children.appendChild(child.target);
+      } else {
+        console.log('before', items[index + 1].target);
+        els.children.insertBefore(child.target, items[index + 1].target);
+      }
     }
 
     select() {
@@ -251,7 +270,6 @@
             this.props.handleEditCancel();
           }
         });
-        els.input.focus();
         els.main.appendChild(els.input);
       } else {
         els.title = createDiv('fbv-item-title');
@@ -334,8 +352,7 @@
           const parentPath = item.getParentPath();
 
           if (parentPath === '/') {
-            this.rootItems.push(item);
-            els.container.appendChild(item.target);
+            this.addRootItem(item);
           } else {
             this.items[parentPath].addChild(item);
           }
@@ -376,6 +393,19 @@
       return this.props.options.value.split('\n').map(line => line.trim()).filter(line => line !== '');
     }
 
+    addRootItem(item) {
+      const els = this.elements;
+      this.rootItems.push(item);
+      this.rootItems.sort((a, b) => a.path > b.path ? 1 : -1);
+      const index = this.rootItems.indexOf(item);
+
+      if (index === this.rootItems.length - 1) {
+        els.container.appendChild(item.target);
+      } else {
+        els.container.insertBefore(item.target, this.rootItems[index + 1].target);
+      }
+    }
+
     showAddFile() {
       this.hideEditor();
       const item = this.selectedItem;
@@ -401,6 +431,8 @@
         baseItem.expand();
         baseItem.insertTempChild(itemContainer);
       }
+
+      this.addFileItem.focusInput();
     }
 
     showAddDir() {}
@@ -413,31 +445,7 @@
 
     editItem() {}
 
-    removeItem() {} // updateEditMode(editMode, editTarget) {
-    //   const { handleEdit, handleEditCancel } = this.props;
-    //   if (editMode === 'newFile') {
-    //     const itemContainer = createDiv('fbv-tree-item');
-    //     let basePath = '/';
-    //     if (editTarget) {
-    //       basePath = editTarget.isDir() ? editTarget.path : editTarget.getParentPath();
-    //     }
-    //     const line = (basePath === '/' ? '' : basePath) + '_?newFile';
-    //     this.newFileItem = new FileItemView(itemContainer, { 
-    //       line, 
-    //       handleEdit,
-    //       handleEditCancel,
-    //     });
-    //     if (basePath === '/') {
-    //       const container = this.elements.container;
-    //       container.insertBefore(itemContainer, container.firstChild);
-    //     } else {
-    //       const baseItem = this.items[basePath];
-    //       baseItem.expand();
-    //       baseItem.insertTempChild(itemContainer);
-    //     }
-    //   }
-    // }
-
+    removeItem() {}
 
     // Draw DOM elements in the target element.
     draw() {
@@ -491,7 +499,7 @@
         if (parentPath === '/') {
           this.rootItems.push(item);
         } else {
-          this.items[parentPath].addChild(item);
+          this.items[parentPath].appendChild(item);
         } // TODO: Sort!
 
       } // Draw root items.
@@ -580,16 +588,6 @@
       });
 
       _defineProperty(this, "handleEditModeChange", editMode => {
-        // if (['rename', 'remove'].includes(editMode) && !this.selectedItem) {
-        //   return;
-        // }
-        // this.fileTreeView.editModeChange(editMode)
-        // this.editMode = editMode;
-        // this.editTarget = this.selectedItem;
-        // if (editMode === 'remove') {
-        // } else {
-        //   this.fileTreeView.updateEditMode(this.editMode, this.editTarget);
-        // }
         switch (editMode) {
           case 'newFile':
             this.fileTreeView.showAddFile();
@@ -634,10 +632,7 @@
       this.target = target;
       this.options = { ...DEFAULT_OPTIONS,
         ...options
-      }; // this.selectedItem = null;
-      // this.editMode = null;
-      // this.editTarget = null;
-
+      };
       this.elements = {};
       this.draw();
     }
@@ -646,8 +641,6 @@
       return this.fileTreeView.getValue();
     }
 
-    // handleEditCancel = () => {
-    // };
     // Draw DOM elements in the target element.
     draw() {
       // Create elements.
@@ -663,24 +656,17 @@
       const {
         on,
         dispatch,
-        // items,
         options,
         handleChange,
-        handleSelect,
         handleEditModeChange,
-        handleEdit // handleEditCancel,
-
+        handleEdit
       } = this;
       this.fileTreeView = new FileTreeView(els.body, {
         on,
         dispatch,
-        // items,
         options,
         handleChange,
-        // handleSelect,
-        // handleEditModeChange,
-        handleEdit // handleEditCancel,
-
+        handleEdit
       });
       this.toolbarView = new ToolbarView(els.header, {
         handleEditModeChange

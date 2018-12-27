@@ -20,10 +20,6 @@ export default class FileBrowserView {
       ...DEFAULT_OPTIONS,
       ...options,
     };
-    // this.selectedItem = null;
-    // this.editMode = null;
-    // this.editTarget = null;
-    
     this.elements = {};
     this.draw();
   }
@@ -45,27 +41,7 @@ export default class FileBrowserView {
     this.dispatch('change', { item });
   };
 
-  // handleSelect = item => {
-  //   if (this.selectedItem) {
-  //     this.selectedItem.unselect();
-  //   }
-  //   item.select();
-  //   this.selectedItem = item;
-  //   this.dispatch('select', { item });
-  // };
-
   handleEditModeChange = editMode => {
-    // if (['rename', 'remove'].includes(editMode) && !this.selectedItem) {
-    //   return;
-    // }
-    // this.fileTreeView.editModeChange(editMode)
-    // this.editMode = editMode;
-    // this.editTarget = this.selectedItem;
-    // if (editMode === 'remove') {
-
-    // } else {
-    //   this.fileTreeView.updateEditMode(this.editMode, this.editTarget);
-    // }
     switch (editMode) {
       case 'newFile':
         this.fileTreeView.showAddFile();
@@ -105,10 +81,6 @@ export default class FileBrowserView {
     return this.confirmEdit(editMode, editTarget, detail);
   };
 
-  // handleEditCancel = () => {
-
-  // };
-
   // Draw DOM elements in the target element.
   draw() {
     // Create elements.
@@ -125,24 +97,17 @@ export default class FileBrowserView {
     const { 
       on,
       dispatch,
-      // items,
       options,
       handleChange,
-      handleSelect,
       handleEditModeChange,
       handleEdit,
-      // handleEditCancel,
     } = this;
     this.fileTreeView = new FileTreeView(els.body, {
       on,
       dispatch,
-      // items,
       options,
       handleChange,
-      // handleSelect,
-      // handleEditModeChange,
       handleEdit,
-      // handleEditCancel,
     });
     this.toolbarView = new ToolbarView(els.header, {
       handleEditModeChange,

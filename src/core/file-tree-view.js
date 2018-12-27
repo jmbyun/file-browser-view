@@ -26,6 +26,19 @@ export default class FileTreeView {
       .filter(line => line !== '');
   }
 
+  addRootItem(item) {
+    const els = this.elements;
+
+    this.rootItems.push(item);
+    this.rootItems.sort((a, b) => a.path > b.path ? 1 : -1);
+    const index = this.rootItems.indexOf(item);
+    if (index === this.rootItems.length - 1) {
+      els.container.appendChild(item.target);
+    } else {
+      els.container.insertBefore(item.target, this.rootItems[index + 1].target);
+    }
+  }
+
   showAddFile() {
     this.hideEditor();
     const item = this.selectedItem;
@@ -48,6 +61,7 @@ export default class FileTreeView {
       baseItem.expand();
       baseItem.insertTempChild(itemContainer);
     }
+    this.addFileItem.focusInput();
   }
 
   showAddDir() {
@@ -94,8 +108,7 @@ export default class FileTreeView {
         this.items[item.path] = item;
         const parentPath = item.getParentPath();
         if (parentPath === '/') {
-          this.rootItems.push(item);
-          els.container.appendChild(item.target);
+          this.addRootItem(item);
         } else {
           this.items[parentPath].addChild(item);
         }
@@ -114,31 +127,6 @@ export default class FileTreeView {
   removeItem() {
 
   }
-
-  // updateEditMode(editMode, editTarget) {
-  //   const { handleEdit, handleEditCancel } = this.props;
-  //   if (editMode === 'newFile') {
-  //     const itemContainer = createDiv('fbv-tree-item');
-  //     let basePath = '/';
-  //     if (editTarget) {
-  //       basePath = editTarget.isDir() ? editTarget.path : editTarget.getParentPath();
-  //     }
-  //     const line = (basePath === '/' ? '' : basePath) + '_?newFile';
-  //     this.newFileItem = new FileItemView(itemContainer, { 
-  //       line, 
-  //       handleEdit,
-  //       handleEditCancel,
-  //     });
-  //     if (basePath === '/') {
-  //       const container = this.elements.container;
-  //       container.insertBefore(itemContainer, container.firstChild);
-  //     } else {
-  //       const baseItem = this.items[basePath];
-  //       baseItem.expand();
-  //       baseItem.insertTempChild(itemContainer);
-  //     }
-  //   }
-  // }
 
   handleSelect = item => {
     this.hideEditor();
@@ -202,7 +190,7 @@ export default class FileTreeView {
       if (parentPath === '/') {
         this.rootItems.push(item);
       } else {
-        this.items[parentPath].addChild(item);
+        this.items[parentPath].appendChild(item);
       }
       // TODO: Sort!
     }

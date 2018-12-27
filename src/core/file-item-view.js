@@ -79,9 +79,23 @@ export default class FileItemView {
     }
   }
 
-  addChild(child) {
+  appendChild(child) {
     this.children.push(child);
     this.elements.children.appendChild(child.target);
+  }
+
+  addChild(child) {
+    const els = this.elements;
+    const items = this.children;
+    items.push(child);
+    items.sort((a, b) => a.path > b.path ? 1 : -1);
+    const index = items.indexOf(child);
+    if (index === items.length - 1) {
+      els.children.appendChild(child.target);
+    } else {
+      console.log('before', items[index + 1].target);
+      els.children.insertBefore(child.target, items[index + 1].target);
+    }
   }
 
   select() {
@@ -115,6 +129,10 @@ export default class FileItemView {
   remove() {
     this.target.removeChild(this.elements.container);
   }
+
+  focusInput = () => {
+    this.elements.input.focus();
+  };
 
   handleClickRow(e) {
     if (this.options.dir) {
@@ -163,7 +181,6 @@ export default class FileItemView {
           this.props.handleEditCancel();
         }
       });
-      els.input.focus();
       els.main.appendChild(els.input);
     } else {
       els.title = createDiv('fbv-item-title');
