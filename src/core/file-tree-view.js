@@ -11,6 +11,7 @@ export default class FileTreeView {
     this.rootItems = [];
     this.selectedItem = null;
     this.addFileItem = null;
+    this.addDirItem = null;
 
     this.elements = {};
     this.draw();
@@ -39,7 +40,7 @@ export default class FileTreeView {
     }
   }
 
-  showAddFile() {
+  showAddItem(isDir) {
     this.hideEditor();
     const item = this.selectedItem;
     const itemContainer = createDiv('fbv-tree-item');
@@ -47,10 +48,15 @@ export default class FileTreeView {
     if (item) {
       basePath = item.isDir() ? item.path : item.getParentPath();
     }
-    const line = (basePath === '/' ? '' : basePath) + '_?newFile';
-    this.addFileItem = new FileItemView(itemContainer, {
+    const line = [
+      basePath === '/' ? '' : basePath,
+      '_?',
+      isDir ? 'newDir' : 'newFile',
+    ].join('');
+    const handleEdit = isDir ? this.addDir : this.addFile;
+    const newItem = new FileItemView(itemContainer, {
       line,
-      handleEdit: this.addFile,
+      handleEdit,
       handleEditCancel: this.hideEditor,
     });
     if (basePath === '/') {
@@ -61,11 +67,20 @@ export default class FileTreeView {
       baseItem.expand();
       baseItem.insertTempChild(itemContainer);
     }
-    this.addFileItem.focusInput();
+    newItem.focusInput();
+    if (isDir) {
+      this.addDirItem = newItem;
+    } else {
+      this.addFileItem = newItem;
+    }
+  }
+
+  showAddFile() {
+    this.showAddItem(false);
   }
 
   showAddDir() {
-
+    this.showAddItem(true);
   }
 
   showEdit() {
@@ -81,44 +96,59 @@ export default class FileTreeView {
       this.addFileItem.remove();
       this.addFileItem = null;
     }
+    if (this.addDirItem) {
+      this.addDirItem.remove();
+      this.addDirItem = null;
+    }
   };
 
-  addFile = (item, detail) => {
+  addItem = (item, detail, isDir) => {
     const { title } = detail;
-    const basePath = this.addFileItem.getParentPath();
-    const path = basePath === '/' ? title : basePath + title;
     const els = this.elements;
+    const basePath = item.getParentPath();
+    const line = [
+      basePath === '/' ? '' : basePath,
+      title,
+      isDir ? '/' : '',
+    ].join('');
     const {
       on,
       dispatch,
       handleChange,
     } = this.props;
-    const handleSelect = this.handleSelect;
-    this.props.handleEdit('newFile', item, detail)
+    const editMode = isDir ? 'newDir' : 'newFile';
+    const element = createDiv('fbv-tree-item');
+    const newItem = new FileItemView(element, {
+      line,
+      on,
+      dispatch,
+      handleChange,
+      handleSelect: this.handleSelect,
+    });
+    this.props.handleEdit(editMode, newItem, { path: newItem.path })
       .then(() => {
-        const itemContainer = createDiv('fbv-tree-item');
-        const item = new FileItemView(itemContainer, {
-          line: path,
-          on,
-          dispatch,
-          handleChange,
-          handleSelect,
-        });
-        els.items[item.path] = itemContainer;
-        this.items[item.path] = item;
-        const parentPath = item.getParentPath();
+        els.items[newItem.path] = element;
+        this.items[newItem.path] = newItem;
+        const parentPath = newItem.getParentPath();
         if (parentPath === '/') {
-          this.addRootItem(item);
+          this.addRootItem(newItem);
         } else {
-          this.items[parentPath].addChild(item);
+          this.items[parentPath].addChild(newItem);
         }
+      })
+      .catch(() => {
+        // Do nothing.
       });
     this.hideEditor();
   };
 
-  addDir() {
+  addFile = (item, detail) => {
+    return this.addItem(item, detail, false);
+  };
 
-  }
+  addDir = (item, detail) => {
+    return this.addItem(item, detail, true);
+  };
 
   editItem() {
 
