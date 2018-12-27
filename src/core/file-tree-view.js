@@ -84,7 +84,16 @@ export default class FileTreeView {
   }
 
   showEdit() {
-
+    this.hideEditor();
+    const item = this.selectedItem;
+    if (!item) {
+      return;
+    }
+    item.showRename({
+      handleEdit: this.rename,
+      handleEditCancel: this.hideEditor,
+    });
+    this.renameItem = item;
   }
 
   showRemove() {
@@ -99,6 +108,10 @@ export default class FileTreeView {
     if (this.addDirItem) {
       this.addDirItem.remove();
       this.addDirItem = null;
+    }
+    if (this.renameItem) {
+      this.renameItem.cancelRename();
+      this.renameItem = null;
     }
   };
 
@@ -150,11 +163,31 @@ export default class FileTreeView {
     return this.addItem(item, detail, true);
   };
 
-  editItem() {
+  rename = (item, detail) => {
+    const { title } = detail;
+    const oldPath = item.path;
+    const oldTitle = item.title;
+    item.rename(title);
+    this.props.handleEdit('rename', item, { path: item.path })
+      .then(() => {
+        if (item.isDir()) {
+          Object.keys(this.items)
+            .filter(key => this.items[key].path.startsWith(oldPath))
+            .forEach(key => {
+              const i = this.items[key];
+              console.log('key', key);
+              i.path = i.path.replace(oldPath, item.path);
+              i.updateLine();
+            });
+        }
+      })
+      .catch(() => {
+        item.rename(oldTitle);
+      });
+    this.hideEditor();
+  };
 
-  }
-
-  removeItem() {
+  remove() {
 
   }
 
@@ -174,7 +207,6 @@ export default class FileTreeView {
       on,
       dispatch,
       handleChange,
-      // handleSelect,
     } = this.props;
     const handleSelect = this.handleSelect;
     const els = this.elements;
@@ -222,7 +254,6 @@ export default class FileTreeView {
       } else {
         this.items[parentPath].appendChild(item);
       }
-      // TODO: Sort!
     }
     
     // Draw root items.

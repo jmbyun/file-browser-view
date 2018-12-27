@@ -41,6 +41,7 @@ export default class FileItemView {
     const expand = this.options.expand ? '*' : '';
     const separator = params ? '?' : '';
     this.line = `${this.path}${expand}${separator}${params}`;
+    this.pathTokens = this.path.split('/').filter(p => p !== '');
   }
 
   parseOptions(query) {
@@ -126,6 +127,32 @@ export default class FileItemView {
     this.props.handleChange(this);
   }
 
+  showRename(props) {
+    this.options.rename = true;
+    Object.assign(this.props, props);
+    this.updateLine();
+    this.drawMainItem();
+  }
+
+  cancelRename() {
+    delete this.options['rename'];
+    this.updateLine();
+    this.drawMainItem();
+  }
+
+  rename(title) {
+    delete this.options['rename'];
+    console.log('new title', title);
+    this.title = title;
+    this.path = [
+      this.getParentPath(),
+      title,
+      this.options.dir ? '/' : '',
+    ].join('');
+    this.updateLine();
+    this.drawMainItem();
+  }
+
   remove() {
     this.target.removeChild(this.elements.container);
   }
@@ -135,6 +162,9 @@ export default class FileItemView {
   };
 
   handleClickRow(e) {
+    if (this.options.rename) {
+      return;
+    }
     if (this.options.dir) {
       if (this.options.expand) {
         this.collapse();

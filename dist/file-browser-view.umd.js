@@ -113,6 +113,7 @@
       const expand = this.options.expand ? '*' : '';
       const separator = params ? '?' : '';
       this.line = `${this.path}${expand}${separator}${params}`;
+      this.pathTokens = this.path.split('/').filter(p => p !== '');
     }
 
     parseOptions(query) {
@@ -204,11 +205,37 @@
       this.props.handleChange(this);
     }
 
+    showRename(props) {
+      this.options.rename = true;
+      Object.assign(this.props, props);
+      this.updateLine();
+      this.drawMainItem();
+    }
+
+    cancelRename() {
+      delete this.options['rename'];
+      this.updateLine();
+      this.drawMainItem();
+    }
+
+    rename(title) {
+      delete this.options['rename'];
+      console.log('new title', title);
+      this.title = title;
+      this.path = [this.getParentPath(), title, this.options.dir ? '/' : ''].join('');
+      this.updateLine();
+      this.drawMainItem();
+    }
+
     remove() {
       this.target.removeChild(this.elements.container);
     }
 
     handleClickRow(e) {
+      if (this.options.rename) {
+        return;
+      }
+
       if (this.options.dir) {
         if (this.options.expand) {
           this.collapse();
@@ -328,6 +355,11 @@
           this.addDirItem.remove();
           this.addDirItem = null;
         }
+
+        if (this.renameItem) {
+          this.renameItem.cancelRename();
+          this.renameItem = null;
+        }
       });
 
       _defineProperty(this, "addItem", (item, detail, isDir) => {
@@ -374,6 +406,30 @@
 
       _defineProperty(this, "addDir", (item, detail) => {
         return this.addItem(item, detail, true);
+      });
+
+      _defineProperty(this, "rename", (item, detail) => {
+        const {
+          title
+        } = detail;
+        const oldPath = item.path;
+        const oldTitle = item.title;
+        item.rename(title);
+        this.props.handleEdit('rename', item, {
+          path: item.path
+        }).then(() => {
+          if (item.isDir()) {
+            Object.keys(this.items).filter(key => this.items[key].path.startsWith(oldPath)).forEach(key => {
+              const i = this.items[key];
+              console.log('key', key);
+              i.path = i.path.replace(oldPath, item.path);
+              i.updateLine();
+            });
+          }
+        }).catch(() => {
+          item.rename(oldTitle);
+        });
+        this.hideEditor();
       });
 
       _defineProperty(this, "handleSelect", item => {
@@ -467,21 +523,31 @@
       this.showAddItem(true);
     }
 
-    showEdit() {}
+    showEdit() {
+      this.hideEditor();
+      const item = this.selectedItem;
+
+      if (!item) {
+        return;
+      }
+
+      item.showRename({
+        handleEdit: this.rename,
+        handleEditCancel: this.hideEditor
+      });
+      this.renameItem = item;
+    }
 
     showRemove() {}
 
-    editItem() {}
-
-    removeItem() {}
+    remove() {}
 
     // Draw DOM elements in the target element.
     draw() {
       const {
         on,
         dispatch,
-        handleChange // handleSelect,
-
+        handleChange
       } = this.props;
       const handleSelect = this.handleSelect;
       const els = this.elements;
@@ -528,8 +594,7 @@
           this.rootItems.push(item);
         } else {
           this.items[parentPath].appendChild(item);
-        } // TODO: Sort!
-
+        }
       } // Draw root items.
 
 
