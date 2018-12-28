@@ -5,6 +5,17 @@
   overflow-y: auto;
 }
 
+.fbv-tree-toast-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  z-index: 310;
+}
+
 .fbv-tree-item {
   display: block;
+  z-index: 300;
 }

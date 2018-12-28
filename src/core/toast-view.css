@@ -1,0 +1,20 @@
+.fbv-toast-container {
+  display: flex;
+  align-items: center;
+  flex-flow: row nowrap;
+  padding: 0.3rem 0.5rem;
+}
+
+.fbv-toast-message {
+  flex: 1 1 auto;
+}
+
+.fbv-toast-button {
+  display: block;
+  flex: 0 0 auto;
+  text-align: center;
+  min-width: 1.25rem;
+  padding: 0 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}

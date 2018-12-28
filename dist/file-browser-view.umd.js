@@ -172,9 +172,15 @@
       if (index === items.length - 1) {
         els.children.appendChild(child.target);
       } else {
-        console.log('before', items[index + 1].target);
         els.children.insertBefore(child.target, items[index + 1].target);
       }
+    }
+
+    removeChild(child) {
+      const els = this.elements;
+      const index = this.children.indexOf(child);
+      this.children.splice(index, 1);
+      els.children.removeChild(child.target);
     }
 
     select() {
@@ -340,8 +346,62 @@
 
   }
 
-  var css$1 = ".fbv-tree-container {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  overflow-y: auto;\n}\n\n.fbv-tree-item {\n  display: block;\n}";
+  var css$1 = ".fbv-toast-container {\n  display: flex;\n  align-items: center;\n  flex-flow: row nowrap;\n  padding: 0.3rem 0.5rem;\n}\n\n.fbv-toast-message {\n  flex: 1 1 auto;\n}\n\n.fbv-toast-button {\n  display: block;\n  flex: 0 0 auto;\n  text-align: center;\n  min-width: 1.25rem;\n  padding: 0 0.5rem;\n  font-size: 0.8rem;\n  cursor: pointer;\n}";
   styleInject(css$1);
+
+  class ToastView {
+    constructor(target, props) {
+      this.target = target;
+      this.props = props;
+      this.elements = {};
+      this.draw();
+    }
+
+    remove() {
+      this.target.removeChild(this.elements.container);
+    }
+
+    drawButtons() {
+      const {
+        handleOk,
+        handleCancel
+      } = this.props;
+      const els = this.elements;
+
+      if (handleOk) {
+        els.okButton = createAnchor('fbv-toast-button');
+        els.okButton.addEventListener('click', () => handleOk());
+        els.okButton.appendChild(createIcon('fa fa-check'));
+        els.container.appendChild(els.okButton);
+      }
+
+      if (handleCancel) {
+        els.cancelButton = createAnchor('fbv-toast-button');
+        els.cancelButton.addEventListener('click', () => handleCancel());
+        els.cancelButton.appendChild(createIcon('fa fa-times'));
+        els.container.appendChild(els.cancelButton);
+      }
+    } // Draw DOM elements in the target element.
+
+
+    draw() {
+      // Create and structure elements.
+      const {
+        message
+      } = this.props;
+      const els = this.elements;
+      els.container = createDiv('fbv-toast-container');
+      els.message = createDiv('fbv-toast-message');
+      els.message.innerHTML = message;
+      els.container.appendChild(els.message);
+      this.drawButtons();
+      this.target.appendChild(els.container);
+    }
+
+  }
+
+  var css$2 = ".fbv-tree-container {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  overflow-y: auto;\n}\n\n.fbv-tree-toast-container {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100%;\n  max-height: 100%;\n  overflow-y: auto;\n  z-index: 310;\n}\n\n.fbv-tree-item {\n  display: block;\n  z-index: 300;\n}";
+  styleInject(css$2);
 
   class FileTreeView {
     constructor(target, props) {
@@ -359,6 +419,13 @@
         if (this.renameItem) {
           this.renameItem.cancelRename();
           this.renameItem = null;
+        }
+
+        if (this.removeToast) {
+          this.removeToast.remove();
+          this.removeToast = null;
+          this.elements.container.removeChild(this.elements.toastContainer);
+          delete this.elements['toastContainer'];
         }
       });
 
@@ -387,7 +454,7 @@
           path: newItem.path
         }).then(() => {
           els.items[newItem.path] = element;
-          this.items[newItem.path] = newItem;
+          this.addItemWithPath(newItem, newItem.path);
           const parentPath = newItem.getParentPath();
 
           if (parentPath === '/') {
@@ -415,6 +482,7 @@
         const oldPath = item.path;
         const oldTitle = item.title;
         item.rename(title);
+        this.changeItemPath(item, oldPath, item.path);
         this.props.handleEdit('rename', item, {
           path: item.path
         }).then(() => {
@@ -423,10 +491,37 @@
               const i = this.items[key];
               i.path = i.path.replace(oldPath, item.path);
               i.updateLine();
+              this.changeItemPath(i, key, i.path);
             });
           }
         }).catch(() => {
+          this.changeItemPath(item, item.path, oldPath);
           item.rename(oldTitle);
+        });
+        this.hideEditor();
+      });
+
+      _defineProperty(this, "remove", () => {
+        const item = this.selectedItem;
+        this.props.handleEdit('remove', item, {
+          path: item.path
+        }).then(() => {
+          const basePath = item.getParentPath();
+
+          if (basePath === '/') {
+            this.removeRootItem(item);
+          } else {
+            this.items[basePath].removeChild(item);
+          }
+
+          this.removeItemWithPath(item.path);
+
+          if (item.isDir()) {
+            Object.keys(this.items).filter(key => this.items[key].path.startsWith(item.path)).forEach(key => {
+              this.removeItemWithPath(key);
+            });
+          }
+        }).catch(() => {// Do nothing.
         });
         this.hideEditor();
       });
@@ -453,6 +548,8 @@
       this.selectedItem = null;
       this.addFileItem = null;
       this.addDirItem = null;
+      this.renameItem = null;
+      this.removeToast = null;
       this.elements = {};
       this.draw();
     }
@@ -476,6 +573,39 @@
       } else {
         els.container.insertBefore(item.target, this.rootItems[index + 1].target);
       }
+    }
+
+    removeRootItem(item) {
+      const els = this.elements;
+      const index = this.rootItems.indexOf(item);
+      this.rootItems.splice(index, 1);
+      els.container.removeChild(item.target);
+    }
+
+    changeItemPath(item, prevPath, path) {
+      // Manage "this.items".
+      item.path = path;
+      delete this.items[prevPath];
+      this.items[path] = item; // Manage "this.paths".
+
+      const index = this.paths.indexOf(prevPath);
+      this.paths[index] = path;
+    }
+
+    removeItemWithPath(path) {
+      // Manage "this.items".
+      delete this.items[path]; // Manage "this.paths".
+
+      const index = this.paths.indexOf(path);
+      this.paths.splice(index, 1);
+    }
+
+    addItemWithPath(item, path) {
+      // Manage "this.items".
+      this.items[path] = item; // Manage "this.paths".
+
+      this.paths.push(path);
+      this.paths.sort((a, b) => a > b ? 1 : -1);
     }
 
     showAddItem(isDir) {
@@ -537,9 +667,24 @@
       this.renameItem = item;
     }
 
-    showRemove() {}
+    showRemove() {
+      this.hideEditor();
+      const item = this.selectedItem;
 
-    remove() {}
+      if (!item) {
+        return;
+      }
+
+      const els = this.elements;
+      els.toastContainer = createDiv('fbv-tree-toast-container');
+      const toast = new ToastView(els.toastContainer, {
+        message: ['<i class="fa fa-question-circle"></i>', '&nbsp;', escape(item.title), '&nbsp;', '<i class="fa fa-long-arrow-right"></i>', '&nbsp;', '<i class="fa fa-trash"></i>'].join(' '),
+        handleOk: this.remove,
+        handleCancel: this.hideEditor
+      });
+      this.removeToast = toast;
+      els.container.appendChild(els.toastContainer);
+    }
 
     // Draw DOM elements in the target element.
     draw() {
@@ -606,8 +751,8 @@
 
   }
 
-  var css$2 = ".fbv-toolbar-container {\n  display: flex;\n  padding: 0 0.25rem;\n  flex-flow: row wrap;\n}\n\n.fbv-toolbar-item {\n  flex: 0 0 auto;\n  padding: 0.25rem 0.25rem;\n  font-size: 1rem;\n  cursor: pointer;\n}\n\n.fbv-toolbar-item:disabled {\n  cursor: not-allowed;\n}\n";
-  styleInject(css$2);
+  var css$3 = ".fbv-toolbar-container {\n  display: flex;\n  padding: 0 0.25rem;\n  flex-flow: row wrap;\n}\n\n.fbv-toolbar-item {\n  flex: 0 0 auto;\n  padding: 0.25rem 0.25rem;\n  font-size: 1rem;\n  cursor: pointer;\n}\n\n.fbv-toolbar-item:disabled {\n  cursor: not-allowed;\n}\n";
+  styleInject(css$3);
 
   class ToolbarView {
     constructor(target, props) {
@@ -649,11 +794,11 @@
 
   }
 
-  var css$3 = "[class*='fbv-'] {\n  box-sizing: border-box;\n}\n\n.fbv-container {\n  display: flex;\n  flex-flow: column nowrap;\n  position: relative;\n  width: 100%;\n  height: 100%;\n  font-size: 0.875rem;\n  line-height: 1.125rem;\n}\n\n.fbv-header {\n  flex: 0 0 auto;\n  position: relative;\n}\n\n.fbv-body-container {\n  flex: 1 1 auto;\n  position: relative;\n}\n\n.fbv-body {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n}\n";
-  styleInject(css$3);
-
-  var css$4 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-container {\n  background-color: #eee;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:hover {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-row-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-item-row-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-icon {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-item-input {\n  border-color: #999;\n  background-color: #eee;\n  color: #222;\n}";
+  var css$4 = "[class*='fbv-'] {\n  box-sizing: border-box;\n}\n\n.fbv-container {\n  display: flex;\n  flex-flow: column nowrap;\n  position: relative;\n  width: 100%;\n  height: 100%;\n  font-size: 0.875rem;\n  line-height: 1.125rem;\n}\n\n.fbv-header {\n  flex: 0 0 auto;\n  position: relative;\n}\n\n.fbv-body-container {\n  flex: 1 1 auto;\n  position: relative;\n}\n\n.fbv-body {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n}\n";
   styleInject(css$4);
+
+  var css$5 = ".fbv-container.t-default-light .fbv-text {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-container {\n  background-color: #eee;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:hover {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-toolbar-item:disabled:hover {\n  color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-tree-container {\n  background-color: #fff;\n}\n\n.fbv-container.t-default-light .fbv-item-row-container:hover {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-item-row-container--active {\n  background-color: #ccc;\n}\n\n.fbv-container.t-default-light .fbv-item-icon {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-item-input {\n  border-color: #999;\n  background-color: #eee;\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toast-container {\n  background-color: #ddd;\n}\n\n.fbv-container.t-default-light .fbv-toast-message {\n  color: #222;\n}\n\n.fbv-container.t-default-light .fbv-toast-button {\n  color: #666;\n}\n\n.fbv-container.t-default-light .fbv-toast-button:hover {\n  color: #222;\n}";
+  styleInject(css$5);
 
   const DEFAULT_OPTIONS = {
     theme: 'default-light',

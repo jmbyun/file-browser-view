@@ -94,9 +94,15 @@ export default class FileItemView {
     if (index === items.length - 1) {
       els.children.appendChild(child.target);
     } else {
-      console.log('before', items[index + 1].target);
       els.children.insertBefore(child.target, items[index + 1].target);
     }
+  }
+
+  removeChild(child) {
+    const els = this.elements;
+    const index = this.children.indexOf(child);
+    this.children.splice(index, 1);
+    els.children.removeChild(child.target);
   }
 
   select() {

@@ -22,6 +22,10 @@
   color: #ccc;
 }
 
+.fbv-container.t-default-light .fbv-tree-container {
+  background-color: #fff;
+}
+
 .fbv-container.t-default-light .fbv-item-row-container:hover {
   background-color: #ddd;
 }
@@ -37,5 +41,21 @@
 .fbv-container.t-default-light .fbv-item-input {
   border-color: #999;
   background-color: #eee;
+  color: #222;
+}
+
+.fbv-container.t-default-light .fbv-toast-container {
+  background-color: #ddd;
+}
+
+.fbv-container.t-default-light .fbv-toast-message {
+  color: #222;
+}
+
+.fbv-container.t-default-light .fbv-toast-button {
+  color: #666;
+}
+
+.fbv-container.t-default-light .fbv-toast-button:hover {
   color: #222;
 }

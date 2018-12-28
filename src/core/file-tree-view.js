@@ -1,4 +1,5 @@
 import FileItemView from './file-item-view';
+import ToastView from './toast-view';
 import { createDiv } from './drawer';
 import './file-tree-view.css';
 
@@ -12,6 +13,8 @@ export default class FileTreeView {
     this.selectedItem = null;
     this.addFileItem = null;
     this.addDirItem = null;
+    this.renameItem = null;
+    this.removeToast = null;
 
     this.elements = {};
     this.draw();
@@ -38,6 +41,40 @@ export default class FileTreeView {
     } else {
       els.container.insertBefore(item.target, this.rootItems[index + 1].target);
     }
+  }
+
+  removeRootItem(item) {
+    const els = this.elements;
+
+    const index = this.rootItems.indexOf(item);
+    this.rootItems.splice(index, 1);
+    els.container.removeChild(item.target);
+  }
+
+  changeItemPath(item, prevPath, path) {
+    // Manage "this.items".
+    item.path = path
+    delete this.items[prevPath];
+    this.items[path] = item;
+    // Manage "this.paths".
+    const index = this.paths.indexOf(prevPath);
+    this.paths[index] = path;
+  }
+
+  removeItemWithPath(path) {
+    // Manage "this.items".
+    delete this.items[path];
+    // Manage "this.paths".
+    const index = this.paths.indexOf(path);
+    this.paths.splice(index, 1);
+  }
+
+  addItemWithPath(item, path) {
+    // Manage "this.items".
+    this.items[path] = item;
+    // Manage "this.paths".
+    this.paths.push(path);
+    this.paths.sort((a, b) => a > b ? 1 : -1);
   }
 
   showAddItem(isDir) {
@@ -97,7 +134,28 @@ export default class FileTreeView {
   }
 
   showRemove() {
-
+    this.hideEditor();
+    const item = this.selectedItem;
+    if (!item) {
+      return;
+    }
+    const els = this.elements;
+    els.toastContainer = createDiv('fbv-tree-toast-container');
+    const toast = new ToastView(els.toastContainer, {
+      message: [
+        '<i class="fa fa-question-circle"></i>',
+        '&nbsp;',
+        escape(item.title),
+        '&nbsp;',
+        '<i class="fa fa-long-arrow-right"></i>',
+        '&nbsp;',
+        '<i class="fa fa-trash"></i>',
+      ].join(' '),
+      handleOk: this.remove,
+      handleCancel: this.hideEditor,
+    });
+    this.removeToast = toast;
+    els.container.appendChild(els.toastContainer);
   }
 
   hideEditor = () => {
@@ -112,6 +170,12 @@ export default class FileTreeView {
     if (this.renameItem) {
       this.renameItem.cancelRename();
       this.renameItem = null;
+    }
+    if (this.removeToast) {
+      this.removeToast.remove();
+      this.removeToast = null;
+      this.elements.container.removeChild(this.elements.toastContainer);
+      delete this.elements['toastContainer'];
     }
   };
 
@@ -141,7 +205,7 @@ export default class FileTreeView {
     this.props.handleEdit(editMode, newItem, { path: newItem.path })
       .then(() => {
         els.items[newItem.path] = element;
-        this.items[newItem.path] = newItem;
+        this.addItemWithPath(newItem, newItem.path);
         const parentPath = newItem.getParentPath();
         if (parentPath === '/') {
           this.addRootItem(newItem);
@@ -168,6 +232,7 @@ export default class FileTreeView {
     const oldPath = item.path;
     const oldTitle = item.title;
     item.rename(title);
+    this.changeItemPath(item, oldPath, item.path);
     this.props.handleEdit('rename', item, { path: item.path })
       .then(() => {
         if (item.isDir()) {
@@ -177,18 +242,41 @@ export default class FileTreeView {
               const i = this.items[key];
               i.path = i.path.replace(oldPath, item.path);
               i.updateLine();
+              this.changeItemPath(i, key, i.path);
             });
         }
       })
       .catch(() => {
+        this.changeItemPath(item, item.path, oldPath);
         item.rename(oldTitle);
       });
     this.hideEditor();
   };
 
-  remove() {
-
-  }
+  remove = () => {
+    const item = this.selectedItem;
+    this.props.handleEdit('remove', item, { path: item.path })
+      .then(() => {
+        const basePath = item.getParentPath();
+        if (basePath === '/') {
+          this.removeRootItem(item);
+        } else {
+          this.items[basePath].removeChild(item);
+        }
+        this.removeItemWithPath(item.path);
+        if (item.isDir()) {
+          Object.keys(this.items)
+            .filter(key => this.items[key].path.startsWith(item.path))
+            .forEach(key => {
+              this.removeItemWithPath(key);
+            });
+        }
+      })
+      .catch(() => {
+        // Do nothing.
+      });
+    this.hideEditor();
+  };
 
   handleSelect = item => {
     this.hideEditor();
