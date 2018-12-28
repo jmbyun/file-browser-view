@@ -47,6 +47,19 @@
         out('[EVENT] change: ' + JSON.stringify(e));
         setText(view.getValue());
       });
+      [
+        'addFile',
+        'addDir',
+        'rename',
+        'remove',
+        'select',
+        'expand',
+        'collapse',
+      ].forEach(eventType => {
+        view.on(eventType, e => {
+          out('[EVENT] ' + eventType + ': ' + JSON.stringify(e));
+        });
+      })
     };
     loadFileBrowser();
   </script>

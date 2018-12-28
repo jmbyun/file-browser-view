@@ -221,7 +221,8 @@ class FileItemView {
   rename(title) {
     delete this.options['rename'];
     this.title = title;
-    this.path = [this.getParentPath(), title, this.options.dir ? '/' : ''].join('');
+    const parentPath = this.getParentPath();
+    this.path = [parentPath === '/' ? '' : parentPath, title, this.options.dir ? '/' : ''].join('');
     this.updateLine();
     this.drawMainItem();
     this.props.handleChange(this);
@@ -456,6 +457,10 @@ class FileTreeView {
         } else {
           this.items[parentPath].addChild(newItem);
         }
+
+        this.props.dispatch('change', {
+          item: newItem
+        });
       }).catch(() => {// Do nothing.
       });
       this.hideEditor();
@@ -488,6 +493,10 @@ class FileTreeView {
             this.changeItemPath(i, key, i.path);
           });
         }
+
+        this.props.dispatch('change', {
+          item
+        });
       }).catch(() => {
         this.changeItemPath(item, item.path, oldPath);
         item.rename(oldTitle);
@@ -515,6 +524,10 @@ class FileTreeView {
             this.removeItemWithPath(key);
           });
         }
+
+        this.props.dispatch('change', {
+          item
+        });
       }).catch(() => {// Do nothing.
       });
       this.hideEditor();

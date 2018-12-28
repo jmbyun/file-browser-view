@@ -149,8 +149,9 @@ export default class FileItemView {
   rename(title) {
     delete this.options['rename'];
     this.title = title;
+    const parentPath = this.getParentPath();
     this.path = [
-      this.getParentPath(),
+      parentPath === '/' ? '' : parentPath,
       title,
       this.options.dir ? '/' : '',
     ].join('');

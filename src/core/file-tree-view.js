@@ -212,6 +212,7 @@ export default class FileTreeView {
         } else {
           this.items[parentPath].addChild(newItem);
         }
+        this.props.dispatch('change', { item: newItem });
       })
       .catch(() => {
         // Do nothing.
@@ -245,6 +246,7 @@ export default class FileTreeView {
               this.changeItemPath(i, key, i.path);
             });
         }
+        this.props.dispatch('change', { item });
       })
       .catch(() => {
         this.changeItemPath(item, item.path, oldPath);
@@ -271,6 +273,7 @@ export default class FileTreeView {
               this.removeItemWithPath(key);
             });
         }
+        this.props.dispatch('change', { item });
       })
       .catch(() => {
         // Do nothing.
