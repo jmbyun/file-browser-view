@@ -122,6 +122,7 @@ export default class FileItemView {
     els.children.style.display = 'none';
     this.updateLine();
     this.props.handleChange(this);
+    this.props.dispatch('collapse', { path: this.path });
   }
 
   expand() {
@@ -131,6 +132,7 @@ export default class FileItemView {
     els.children.style.display = 'block';
     this.updateLine();
     this.props.handleChange(this);
+    this.props.dispatch('expand', { path: this.path });
   }
 
   showRename(props) {

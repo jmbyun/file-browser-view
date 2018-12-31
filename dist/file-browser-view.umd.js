@@ -200,6 +200,9 @@
       els.children.style.display = 'none';
       this.updateLine();
       this.props.handleChange(this);
+      this.props.dispatch('collapse', {
+        path: this.path
+      });
     }
 
     expand() {
@@ -209,6 +212,9 @@
       els.children.style.display = 'block';
       this.updateLine();
       this.props.handleChange(this);
+      this.props.dispatch('expand', {
+        path: this.path
+      });
     }
 
     showRename(props) {
@@ -489,6 +495,7 @@
         item.rename(title);
         this.changeItemPath(item, oldPath, item.path);
         this.props.handleEdit('rename', item, {
+          prevPath: oldPath,
           path: item.path
         }).then(() => {
           if (item.isDir()) {
@@ -549,7 +556,7 @@
         item.select();
         this.selectedItem = item;
         this.props.dispatch('select', {
-          item
+          path: item.path
         });
       });
 

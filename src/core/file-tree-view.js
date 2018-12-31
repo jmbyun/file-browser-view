@@ -234,7 +234,10 @@ export default class FileTreeView {
     const oldTitle = item.title;
     item.rename(title);
     this.changeItemPath(item, oldPath, item.path);
-    this.props.handleEdit('rename', item, { path: item.path })
+    this.props.handleEdit('rename', item, { 
+      prevPath: oldPath,
+      path: item.path,
+    })
       .then(() => {
         if (item.isDir()) {
           Object.keys(this.items)
@@ -288,7 +291,7 @@ export default class FileTreeView {
     }
     item.select();
     this.selectedItem = item;
-    this.props.dispatch('select', { item });
+    this.props.dispatch('select', { path: item.path });
   };
 
   // Draw DOM elements in the target element.

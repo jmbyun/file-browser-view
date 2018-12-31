@@ -41,7 +41,7 @@
       if (detail.item) {
         return JSON.stringify({
           ...detail,
-          item: `Item (${detail.item.path})`,
+          item: `Item(${detail.item.path})`,
         });
       } else {
         return JSON.stringify(detail);
@@ -54,12 +54,11 @@
       const main = document.getElementById('main');
       view = new FileBrowserView(main, { value });
       view.on('change', e => {
-        out('[EVENT] change: ' + detailToString(e.detail));
         setText(view.getValue());
       });
       [
-        'addFile',
-        'addDir',
+        'newFile',
+        'newDir',
         'rename',
         'remove',
         'select',
