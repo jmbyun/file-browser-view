@@ -32,8 +32,9 @@ export default class FileBrowserView {
     this.eventTarget.addEventListener(type, listener);
   };
 
-  dispatch = (typeArg, eventInit) => {
-    const event = new Event(typeArg, eventInit);
+  dispatch = (typeArg, detail, cancelable) => {
+    const event = new Event(typeArg, cancelable ? { cancelable: true } : {});
+    Object.assign(event, { detail });
     return this.eventTarget.dispatchEvent(event);
   };
 
@@ -65,16 +66,14 @@ export default class FileBrowserView {
   };
 
   confirmEdit = (editMode, editTarget, detail) => {
-    const methods = {};
-    const promise = new Promise((resolve, reject) => {
-      methods.resolve = () => resolve();
-      this.dispatch(editMode, {
-        cancel: () => reject(),
-        ...detail,
-      });
+    return new Promise((resolve, reject) => {
+      const canceled = this.dispatch(editMode, detail, true) === false;
+      if (canceled) {
+        reject();
+      } else {
+        resolve();
+      }
     });
-    setTimeout(() => methods.resolve(), 0);
-    return promise;
   };
 
   handleEdit = (editMode, editTarget, detail) => {

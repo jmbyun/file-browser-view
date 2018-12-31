@@ -37,6 +37,16 @@
       console.appendChild(message);
       consoleBox.scrollTop = consoleBox.scrollHeight;
     }
+    function detailToString(detail) {
+      if (detail.item) {
+        return JSON.stringify({
+          ...detail,
+          item: `Item (${detail.item.path})`,
+        });
+      } else {
+        return JSON.stringify(detail);
+      }
+    }
     async function loadFileBrowser() {
       const res = await fetch('/files.txt');
       const value = await res.text();
@@ -44,7 +54,7 @@
       const main = document.getElementById('main');
       view = new FileBrowserView(main, { value });
       view.on('change', e => {
-        out('[EVENT] change: ' + JSON.stringify(e));
+        out('[EVENT] change: ' + detailToString(e.detail));
         setText(view.getValue());
       });
       [
@@ -57,7 +67,7 @@
         'collapse',
       ].forEach(eventType => {
         view.on(eventType, e => {
-          out('[EVENT] ' + eventType + ': ' + JSON.stringify(e));
+          out('[EVENT] ' + eventType + ': ' + detailToString(e.detail));
         });
       })
     };

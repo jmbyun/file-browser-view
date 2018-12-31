@@ -820,8 +820,13 @@ class FileBrowserView {
       this.eventTarget.addEventListener(type, listener);
     });
 
-    _defineProperty(this, "dispatch", (typeArg, eventInit) => {
-      const event = new Event(typeArg, eventInit);
+    _defineProperty(this, "dispatch", (typeArg, detail, cancelable) => {
+      const event = new Event(typeArg, cancelable ? {
+        cancelable: true
+      } : {});
+      Object.assign(event, {
+        detail
+      });
       return this.eventTarget.dispatchEvent(event);
     });
 
@@ -855,17 +860,15 @@ class FileBrowserView {
     });
 
     _defineProperty(this, "confirmEdit", (editMode, editTarget, detail) => {
-      const methods = {};
-      const promise = new Promise((resolve, reject) => {
-        methods.resolve = () => resolve();
+      return new Promise((resolve, reject) => {
+        const canceled = this.dispatch(editMode, detail, true) === false;
 
-        this.dispatch(editMode, {
-          cancel: () => reject(),
-          ...detail
-        });
+        if (canceled) {
+          reject();
+        } else {
+          resolve();
+        }
       });
-      setTimeout(() => methods.resolve(), 0);
-      return promise;
     });
 
     _defineProperty(this, "handleEdit", (editMode, editTarget, detail) => {
